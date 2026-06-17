@@ -1,0 +1,19 @@
+# Visual Studio local state
+.vs/
+
+# CMake/build outputs
+out/
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+
+# Generated benchmark artifacts
+results/timings.csv
+results/*.png
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

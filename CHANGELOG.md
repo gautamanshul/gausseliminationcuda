@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- Replaced the monolithic elimination kernel's block-local `__syncthreads()`
+  coordination with per-pivot kernel launches, which provide the required
+  grid-wide ordering for matrices spanning multiple CUDA blocks.
+- Added explicit CUDA error checks and solver status propagation for singular
+  matrices.
+
+### Changed
+- Split elimination into per-row factor computation and a 2D trailing-matrix
+  update.
+- Added row-swap, singular-matrix, `n=513` multi-block, and `max |Ax-b|`
+  residual validation.
+
 ## [0.2.0-A00] — 2026-05-18
 
 This release packages the prior CUDA Gauss-elimination prototype as the

@@ -6,10 +6,10 @@
 //   * a sequential C++ Gauss-elimination reference (with scaled partial pivoting
 //     and back-substitution) — used as the correctness oracle and the CPU
 //     timing baseline.
-//   * two CUDA kernels: parallel scaling-factor computation, and parallel
-//     elimination with sequential per-pivot row swap.
+//   * CUDA kernels for scaling, per-pivot row selection, factor computation,
+//     trailing-matrix updates, and back-substitution.
 //   * a Google Test sweep over n in {500, 1000, 1500, 2000} at block size 512.
-//     Each test (a) verifies max |x_cpu - x_gpu| < 1e-5, (b) writes one row
+//     Each test verifies CPU/GPU agreement and max |Ax-b|, then writes one row
 //     of timings to results/timings.csv for plot.py to consume.
 //
 // Changes vs. the 0.1.0 prior-coursework version (see CHANGELOG.md):
@@ -18,6 +18,7 @@
 //   * Parameterised test sweep over multiple n values (was n=1500 only).
 //   * Added CSV row emission for reproducibility.
 //   * Reorganised under src/ for CMake build.
+//   * Replaced block-local synchronization with per-pivot kernel launches.
 
 #ifdef __INTELLISENSE__
 void __syncthreads();
@@ -37,6 +38,8 @@ void __syncthreads();
 #include <fstream>
 #include <iostream>
 #include <random>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 using std::abs;
@@ -115,123 +118,183 @@ __global__ void compute_scale_factors_kernel(double* d_A, double* d_s, int n) {
     }
 }
 
-// ----------------------------------------------------------------------------
-// CUDA kernel: parallel elimination with sequential per-pivot row swap.
-//
-// Pivoting is performed by thread 0 only (sequential). The row-elimination
-// loop is parallelised by striding rows across threads (i % blockDim.x == tid).
-// __syncthreads() between pivot and eliminate is required so all threads see
-// the swapped pivot row.
-//
-// Back-substitution is single-threaded (thread 0) — parallelising it is left
-// as a planned dissertation extension (see RQ2 in the proposal).
-// ----------------------------------------------------------------------------
-__global__ void gaussian_elimination_kernel(double* A, double* b, double* s,
-                                            int n, double tol) {
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+// One kernel launch is used for each pivot stage. Kernel completion is the
+// grid-wide synchronization point that __syncthreads() cannot provide.
+__global__ void pivot_and_swap_kernel(double* A, double* b, double* s, int n,
+                                      int k, double tol, int* status) {
+    if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
 
-    for (int k = 0; k < n - 1; k++) {
-        if (tid == 0) {
-            int p = k;
-            double big = fabs(A[k * n + k] / s[k]);
-            for (int i = k + 1; i < n; i++) {
-                double num = fabs(A[i * n + k] / s[i]);
-                if (num > big) {
-                    big = num;
-                    p = i;
-                }
-            }
-            if (p != k) {
-                for (int j = k; j < n; j++) {
-                    double tmp = A[p * n + j];
-                    A[p * n + j] = A[k * n + j];
-                    A[k * n + j] = tmp;
-                }
-                double tb = b[p]; b[p] = b[k]; b[k] = tb;
-                double ts = s[p]; s[p] = s[k]; s[k] = ts;
-            }
+    int pivot = k;
+    double largest = s[k] > 0.0 ? fabs(A[k * n + k]) / s[k] : 0.0;
+    for (int i = k + 1; i < n; i++) {
+        double candidate = s[i] > 0.0 ? fabs(A[i * n + k]) / s[i] : 0.0;
+        if (candidate > largest) {
+            largest = candidate;
+            pivot = i;
         }
-        __syncthreads();
-
-        // FIX (0.2.0): comma-operator bug. Original used `A[k, k]` which
-        // evaluates the comma operator and indexes A[k] rather than the
-        // diagonal A[k*n+k]. Correct check is below.
-        if (fabs(A[k * n + k]) / s[k] < tol) {
-            if (tid == 0) {
-                printf("Gaussian elimination: matrix appears singular at k=%d\n", k);
-            }
-            return;
-        }
-
-        // Eliminate rows below the pivot, distributing rows across threads.
-        for (int i = k + 1; i < n; i++) {
-            if (i % blockDim.x == tid) {
-                double factor = A[i * n + k] / A[k * n + k];
-                for (int j = k; j < n; j++) {
-                    A[i * n + j] -= factor * A[k * n + j];
-                }
-                b[i] -= factor * b[k];
-            }
-        }
-        __syncthreads();
     }
 
-    if (tid == 0) {
-        if (fabs(A[(n - 1) * n + (n - 1)]) / s[n - 1] < tol) {
-            printf("Gaussian elimination: matrix appears singular at last pivot\n");
-            return;
+    if (pivot != k) {
+        for (int j = 0; j < n; j++) {
+            double tmp = A[pivot * n + j];
+            A[pivot * n + j] = A[k * n + j];
+            A[k * n + j] = tmp;
         }
-        // Back-substitution in place into b: b becomes x.
-        b[n - 1] = b[n - 1] / A[(n - 1) * n + (n - 1)];
-        for (int i = n - 2; i >= 0; i--) {
-            double sum = 0;
-            for (int j = i + 1; j < n; j++) {
-                sum += A[i * n + j] * b[j];
-            }
-            b[i] = (b[i] - sum) / A[i * n + i];
+        double tmp = b[pivot];
+        b[pivot] = b[k];
+        b[k] = tmp;
+        tmp = s[pivot];
+        s[pivot] = s[k];
+        s[k] = tmp;
+    }
+
+    if (s[k] == 0.0 || fabs(A[k * n + k]) <= tol * s[k]) {
+        *status = 1;
+    }
+}
+
+__global__ void compute_factors_kernel(double* A, double* b, double* factors,
+                                       int n, int k, const int* status) {
+    if (*status != 0) return;
+
+    int row = k + 1 + blockIdx.x * blockDim.x + threadIdx.x;
+    if (row >= n) return;
+
+    double factor = A[row * n + k] / A[k * n + k];
+    factors[row] = factor;
+    A[row * n + k] = 0.0;
+    b[row] -= factor * b[k];
+}
+
+__global__ void update_trailing_matrix_kernel(double* A, const double* factors,
+                                              int n, int k,
+                                              const int* status) {
+    if (*status != 0) return;
+
+    int col = k + 1 + blockIdx.x * blockDim.x + threadIdx.x;
+    int row = k + 1 + blockIdx.y * blockDim.y + threadIdx.y;
+    if (row >= n || col >= n) return;
+
+    A[row * n + col] -= factors[row] * A[k * n + col];
+}
+
+__global__ void back_substitution_kernel(double* A, double* b, double* s,
+                                         int n, double tol, int* status) {
+    if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
+
+    if (s[n - 1] == 0.0 ||
+        fabs(A[(n - 1) * n + (n - 1)]) <= tol * s[n - 1]) {
+        *status = 1;
+        return;
+    }
+
+    b[n - 1] /= A[(n - 1) * n + (n - 1)];
+    for (int i = n - 2; i >= 0; i--) {
+        double sum = 0.0;
+        for (int j = i + 1; j < n; j++) {
+            sum += A[i * n + j] * b[j];
         }
+        b[i] = (b[i] - sum) / A[i * n + i];
     }
 }
 
 // ----------------------------------------------------------------------------
-// Host wrapper: parallel scaling + parallel elimination (v2 in the prior code).
+// Host wrapper: parallel scaling and host-orchestrated per-pivot elimination.
 // Returns the GPU elapsed milliseconds (kernel time only, not allocs).
 // ----------------------------------------------------------------------------
-static double gauss_gpu(double* A, double* b, int n, double tol,
-                        int block_size = 512) {
+struct GpuSolveResult {
+    double elapsed_ms;
+    bool success;
+};
+
+static void cuda_check(cudaError_t result, const char* operation) {
+    if (result != cudaSuccess) {
+        throw std::runtime_error(std::string(operation) + ": " +
+                                 cudaGetErrorString(result));
+    }
+}
+
+static GpuSolveResult gauss_gpu(double* A, double* b, int n, double tol,
+                                int block_size = 256) {
     double *d_A = nullptr, *d_b = nullptr, *d_s = nullptr;
-    cudaMalloc(&d_A, n * n * sizeof(double));
-    cudaMalloc(&d_b, n * sizeof(double));
-    cudaMalloc(&d_s, n * sizeof(double));
+    double* d_factors = nullptr;
+    int* d_status = nullptr;
+    cudaEvent_t e0 = nullptr, e1 = nullptr;
 
-    cudaMemcpy(d_A, A, n * n * sizeof(double), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_b, b, n * sizeof(double), cudaMemcpyHostToDevice);
+    auto cleanup = [&]() {
+        if (e0) cudaEventDestroy(e0);
+        if (e1) cudaEventDestroy(e1);
+        if (d_A) cudaFree(d_A);
+        if (d_b) cudaFree(d_b);
+        if (d_s) cudaFree(d_s);
+        if (d_factors) cudaFree(d_factors);
+        if (d_status) cudaFree(d_status);
+    };
 
-    int grid_size = (n + block_size - 1) / block_size;
+    try {
+        cuda_check(cudaMalloc(&d_A, n * n * sizeof(double)), "cudaMalloc(A)");
+        cuda_check(cudaMalloc(&d_b, n * sizeof(double)), "cudaMalloc(b)");
+        cuda_check(cudaMalloc(&d_s, n * sizeof(double)), "cudaMalloc(s)");
+        cuda_check(cudaMalloc(&d_factors, n * sizeof(double)),
+                   "cudaMalloc(factors)");
+        cuda_check(cudaMalloc(&d_status, sizeof(int)), "cudaMalloc(status)");
+        cuda_check(cudaMemset(d_status, 0, sizeof(int)), "cudaMemset(status)");
 
-    cudaEvent_t e0, e1;
-    cudaEventCreate(&e0);
-    cudaEventCreate(&e1);
-    cudaEventRecord(e0);
+        cuda_check(cudaMemcpy(d_A, A, n * n * sizeof(double),
+                              cudaMemcpyHostToDevice), "copy A to device");
+        cuda_check(cudaMemcpy(d_b, b, n * sizeof(double),
+                              cudaMemcpyHostToDevice), "copy b to device");
 
-    compute_scale_factors_kernel<<<grid_size, block_size>>>(d_A, d_s, n);
-    gaussian_elimination_kernel<<<grid_size, block_size>>>(d_A, d_b, d_s, n, tol);
+        cuda_check(cudaEventCreate(&e0), "cudaEventCreate(start)");
+        cuda_check(cudaEventCreate(&e1), "cudaEventCreate(stop)");
+        cuda_check(cudaEventRecord(e0), "cudaEventRecord(start)");
 
-    cudaEventRecord(e1);
-    cudaEventSynchronize(e1);
+        int scale_grid = (n + block_size - 1) / block_size;
+        compute_scale_factors_kernel<<<scale_grid, block_size>>>(d_A, d_s, n);
+        cuda_check(cudaGetLastError(), "launch compute_scale_factors_kernel");
 
-    float ms = 0.0f;
-    cudaEventElapsedTime(&ms, e0, e1);
-    cudaEventDestroy(e0);
-    cudaEventDestroy(e1);
+        for (int k = 0; k < n - 1; k++) {
+            pivot_and_swap_kernel<<<1, 1>>>(d_A, d_b, d_s, n, k, tol, d_status);
+            cuda_check(cudaGetLastError(), "launch pivot_and_swap_kernel");
 
-    cudaMemcpy(A, d_A, n * n * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaMemcpy(b, d_b, n * sizeof(double), cudaMemcpyDeviceToHost);
+            int rows = n - k - 1;
+            int row_grid = (rows + block_size - 1) / block_size;
+            compute_factors_kernel<<<row_grid, block_size>>>(
+                d_A, d_b, d_factors, n, k, d_status);
+            cuda_check(cudaGetLastError(), "launch compute_factors_kernel");
 
-    cudaFree(d_A);
-    cudaFree(d_b);
-    cudaFree(d_s);
-    return static_cast<double>(ms);
+            dim3 update_block(16, 16);
+            dim3 update_grid((rows + update_block.x - 1) / update_block.x,
+                             (rows + update_block.y - 1) / update_block.y);
+            update_trailing_matrix_kernel<<<update_grid, update_block>>>(
+                d_A, d_factors, n, k, d_status);
+            cuda_check(cudaGetLastError(),
+                       "launch update_trailing_matrix_kernel");
+        }
+
+        back_substitution_kernel<<<1, 1>>>(d_A, d_b, d_s, n, tol, d_status);
+        cuda_check(cudaGetLastError(), "launch back_substitution_kernel");
+
+        cuda_check(cudaEventRecord(e1), "cudaEventRecord(stop)");
+        cuda_check(cudaEventSynchronize(e1), "CUDA solve");
+
+        float ms = 0.0f;
+        cuda_check(cudaEventElapsedTime(&ms, e0, e1), "cudaEventElapsedTime");
+
+        int status = 0;
+        cuda_check(cudaMemcpy(&status, d_status, sizeof(int),
+                              cudaMemcpyDeviceToHost), "copy solve status");
+        cuda_check(cudaMemcpy(A, d_A, n * n * sizeof(double),
+                              cudaMemcpyDeviceToHost), "copy A to host");
+        cuda_check(cudaMemcpy(b, d_b, n * sizeof(double),
+                              cudaMemcpyDeviceToHost), "copy b to host");
+
+        cleanup();
+        return {static_cast<double>(ms), status == 0};
+    } catch (...) {
+        cleanup();
+        throw;
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -277,22 +340,40 @@ void append_timings_csv(const std::string& path, const TimingRow& r) {
       << "\n";
 }
 
+double max_abs_residual(const std::vector<double>& A,
+                        const std::vector<double>& b,
+                        const std::vector<double>& x, int n) {
+    double residual = 0.0;
+    for (int i = 0; i < n; i++) {
+        double ax = 0.0;
+        for (int j = 0; j < n; j++) {
+            ax += A[i * n + j] * x[j];
+        }
+        residual = std::max(residual, std::abs(ax - b[i]));
+    }
+    return residual;
+}
+
 void run_case(int n, int block_size = 512) {
     const double tol = 1e-5;
     std::mt19937 rng(42 + n);  // deterministic per-n seed
     std::uniform_real_distribution<double> uni(0.0, 1.0);
 
+    std::vector<double> A_original(n * n);
+    std::vector<double> b_original(n);
     std::vector<double> A_cpu(n * n);
     std::vector<double> A_gpu(n * n);
     std::vector<double> b_cpu(n);
     std::vector<double> b_gpu(n);
     for (int i = 0; i < n * n; i++) {
-        A_cpu[i] = uni(rng);
-        A_gpu[i] = A_cpu[i];
+        A_original[i] = uni(rng);
+        A_cpu[i] = A_original[i];
+        A_gpu[i] = A_original[i];
     }
     for (int i = 0; i < n; i++) {
-        b_cpu[i] = uni(rng);
-        b_gpu[i] = b_cpu[i];
+        b_original[i] = uni(rng);
+        b_cpu[i] = b_original[i];
+        b_gpu[i] = b_original[i];
     }
 
     auto t0 = std::chrono::high_resolution_clock::now();
@@ -301,7 +382,11 @@ void run_case(int n, int block_size = 512) {
     double cpu_ms =
         std::chrono::duration<double, std::milli>(t1 - t0).count();
 
-    double gpu_ms = gauss_gpu(A_gpu.data(), b_gpu.data(), n, tol, block_size);
+    ASSERT_FALSE(x_cpu.empty()) << "CPU reference unexpectedly reported singular";
+
+    GpuSolveResult gpu =
+        gauss_gpu(A_gpu.data(), b_gpu.data(), n, tol, block_size);
+    ASSERT_TRUE(gpu.success) << "GPU solver unexpectedly reported singular";
 
     // After gauss_gpu, b_gpu now holds the solution vector x.
     double max_diff = 0.0;
@@ -309,24 +394,53 @@ void run_case(int n, int block_size = 512) {
         double d = std::abs(x_cpu[i] - b_gpu[i]);
         if (d > max_diff) max_diff = d;
     }
+    double residual =
+        max_abs_residual(A_original, b_original, b_gpu, n);
 
     std::cout << "  n=" << n
               << "  block=" << block_size
               << "  CPU=" << cpu_ms << " ms"
-              << "  GPU=" << gpu_ms << " ms"
+              << "  GPU=" << gpu.elapsed_ms << " ms"
               << "  max|x_cpu-x_gpu|=" << max_diff
+              << "  max|Ax-b|=" << residual
               << "\n";
 
-    TimingRow row{n, block_size, cpu_ms, gpu_ms, max_diff,
+    TimingRow row{n, block_size, cpu_ms, gpu.elapsed_ms, residual,
                   driver_version_string(), current_timestamp()};
     append_timings_csv("results/timings.csv", row);
 
     EXPECT_LT(max_diff, tol) << "GPU and CPU solutions diverged beyond tolerance";
+    EXPECT_LT(residual, tol) << "GPU solution does not satisfy Ax=b";
 }
 
 }  // namespace
 
+TEST(GaussCorrectness, RequiresRowSwap) {
+    const int n = 2;
+    std::vector<double> A{0.0, 2.0,
+                          1.0, 3.0};
+    std::vector<double> b{4.0, 5.0};
+
+    GpuSolveResult result = gauss_gpu(A.data(), b.data(), n, 1e-10, 256);
+
+    ASSERT_TRUE(result.success);
+    EXPECT_NEAR(b[0], -1.0, 1e-10);
+    EXPECT_NEAR(b[1], 2.0, 1e-10);
+}
+
+TEST(GaussCorrectness, ReportsSingularMatrix) {
+    const int n = 2;
+    std::vector<double> A{1.0, 2.0,
+                          2.0, 4.0};
+    std::vector<double> b{3.0, 6.0};
+
+    GpuSolveResult result = gauss_gpu(A.data(), b.data(), n, 1e-10, 256);
+
+    EXPECT_FALSE(result.success);
+}
+
 TEST(GaussSweep, N500)  { run_case(500); }
+TEST(GaussSweep, N513MultiBlock) { run_case(513); }
 TEST(GaussSweep, N1000) { run_case(1000); }
 TEST(GaussSweep, N1500) { run_case(1500); }
 TEST(GaussSweep, N2000) { run_case(2000); }
