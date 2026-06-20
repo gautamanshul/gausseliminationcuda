@@ -5,6 +5,21 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+- Added an `--ablation` command-line mode that writes a dissertation-oriented
+  CSV with variant label, matrix size, block size, precision, pivoting policy,
+  CPU/GPU timings, effective GFLOP/s, normalized residual, max residual,
+  solution error, and driver version.
+- Implemented the dissertation `V1` baseline: FP32 custom LU / Gaussian
+  elimination with ordinary partial pivoting, a matching CPU reference, CUDA
+  per-pivot kernels, and V1 correctness tests.
+- Implemented `V2`, a phase-instrumented FP32 ordinary-pivot solver variant
+  that reports pivot/search, row-swap, factor, trailing-update, and
+  back-substitution CUDA event timings and percentages in the ablation CSV.
+- Implemented `V3`, which preserves V2 phase instrumentation but replaces the
+  row-oriented trailing update with a 2D global-memory trailing-update kernel
+  for marginal-speedup comparison.
+
 ### Fixed
 - Replaced the monolithic elimination kernel's block-local `__syncthreads()`
   coordination with per-pivot kernel launches, which provide the required
@@ -13,8 +28,8 @@ All notable changes to this project are documented here. The format is based on
   matrices.
 
 ### Changed
-- Split elimination into per-row factor computation and a 2D trailing-matrix
-  update.
+- Split elimination into per-row factor computation plus row-oriented and 2D
+  trailing-matrix update variants.
 - Added row-swap, singular-matrix, `n=513` multi-block, and `max |Ax-b|`
   residual validation.
 

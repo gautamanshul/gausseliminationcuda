@@ -70,6 +70,50 @@ docker run --rm --gpus all -v $PWD/results:/app/results gausselim:a00
 python plot.py results/timings.csv
 ```
 
+### Ablation CSV
+
+The dissertation ablation branch provides a CSV mode for solver-variant
+experiments. By default, `--ablation` runs `V1`: the FP32 custom LU / Gaussian
+elimination baseline with ordinary partial pivoting and a row-oriented
+trailing-matrix update.
+
+```
+out\build\x64-Release\gauss_elim_bench.exe --ablation --n 500,1000 --block 512 --out results\ablation_v1.csv
+```
+
+This mode writes one row per matrix size with:
+
+```
+timestamp,variant,n,block_size,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,residual_norm2,residual_max,solution_error_norm2,solution_error_max,driver_version
+```
+
+`V2` runs the same FP32 ordinary-pivot, row-update solve as `V1`, but adds
+phase-level CUDA event timing:
+
+```
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V2 --n 500,1000 --block 512 --out results\ablation_v2.csv
+```
+
+For `V2`, the CSV also includes:
+
+```
+pivot_ms,row_swap_ms,factor_ms,update_ms,back_sub_ms,pivot_pct,row_swap_pct,factor_pct,update_pct,back_sub_pct
+```
+
+`V3` keeps the V2 instrumentation but replaces the row-oriented trailing update
+with a 2D global-memory update:
+
+```
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V3 --n 500,1000 --block 512 --out results\ablation_v3.csv
+```
+
+The historical corrected FP64 scaled-pivot solver can still be run for pilot
+comparison with:
+
+```
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant pilot --n 500 --out results\ablation_pilot.csv
+```
+
 ---
 
 ## Expected output
