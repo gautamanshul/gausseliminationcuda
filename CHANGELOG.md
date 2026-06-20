@@ -19,6 +19,12 @@ All notable changes to this project are documented here. The format is based on
 - Implemented `V3`, which preserves V2 phase instrumentation but replaces the
   row-oriented trailing update with a 2D global-memory trailing-update kernel
   for marginal-speedup comparison.
+- Implemented `V4`, an FP32 cuSOLVER production baseline using
+  `cusolverDnSgetrf` and `cusolverDnSgetrs` for RQ1 custom-vs-library
+  comparison.
+- Implemented `V5a`, a shared-memory/tiled trailing-update custom variant for
+  measuring whether memory-hierarchy optimization improves over the V3
+  2D global-memory update.
 
 ### Fixed
 - Replaced the monolithic elimination kernel's block-local `__syncthreads()`

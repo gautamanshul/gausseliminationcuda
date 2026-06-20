@@ -107,6 +107,20 @@ with a 2D global-memory update:
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V3 --n 500,1000 --block 512 --out results\ablation_v3.csv
 ```
 
+`V4` runs the FP32 cuSOLVER production baseline using `cusolverDnSgetrf` and
+`cusolverDnSgetrs`:
+
+```
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V4 --n 500,1000 --block 512 --out results\ablation_v4.csv
+```
+
+`V5a` keeps the V3 phase instrumentation but replaces the 2D global-memory
+trailing update with a shared-memory/tiled update:
+
+```
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V5a --n 500,1000 --block 512 --out results\ablation_v5a.csv
+```
+
 The historical corrected FP64 scaled-pivot solver can still be run for pilot
 comparison with:
 
@@ -175,7 +189,7 @@ gausseliminationcuda/
 
 This artifact is the **baseline** for a doctoral proposal, not the proposed contribution itself. Several limitations are acknowledged here and are scheduled to be addressed in the dissertation work:
 
-1. **No cuBLAS / cuSOLVER strong baseline.** The CPU-vs-GPU comparison shows that a hand-rolled CUDA implementation beats a sequential C++ implementation, but does not establish how far it is from production-grade `cublasSgetrf` / `cusolverDnSgetrf`. Adding that comparison is **RQ1** of the proposal.
+1. **cuSOLVER baseline is available in the ablation branch, but full reporting is still pending.** `V4` adds the FP32 `cusolverDnSgetrf` / `cusolverDnSgetrs` path for RQ1. The next reporting step is to run repeated V1/V3/V4 sweeps at dissertation matrix sizes and compute the custom-vs-cuSOLVER gap.
 2. **Single precision (FP64) only.** No FP32-vs-FP16 precision study. **RQ3** of the proposal addresses this on Turing without tensor cores.
 3. **Single optimization variant.** The corrected implementation uses global-memory per-pivot kernels and a 2D trailing-matrix update, but has no shared-memory tiling, loop unrolling, CUDA Graph capture, parallel pivot reduction, or parallel back-substitution. **RQ2** of the proposal addresses these systematically with an ablation.
 4. **One pivoting strategy.** Scaled partial pivoting only; no full pivoting, no rook pivoting, no random butterfly preprocessing.

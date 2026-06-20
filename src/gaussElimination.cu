@@ -25,6 +25,7 @@ void __syncthreads();
 #endif
 
 #include <cuda_runtime.h>
+#include <cusolverDn.h>
 #include <device_launch_parameters.h>
 
 #include <gtest/gtest.h>
@@ -358,6 +359,34 @@ __global__ void update_trailing_matrix_v3_kernel(float* A, const float* factors,
     A[row * n + col] -= factors[row] * A[k * n + col];
 }
 
+__global__ void update_trailing_matrix_v5a_kernel(float* A,
+                                                  const float* factors,
+                                                  int n, int k,
+                                                  const int* status) {
+    if (*status != 0) return;
+
+    constexpr int TILE = 16;
+    __shared__ float pivot_tile[TILE];
+    __shared__ float factor_tile[TILE];
+
+    int tx = threadIdx.x;
+    int ty = threadIdx.y;
+    int col = k + 1 + blockIdx.x * blockDim.x + tx;
+    int row = k + 1 + blockIdx.y * blockDim.y + ty;
+
+    if (ty == 0 && col < n) {
+        pivot_tile[tx] = A[k * n + col];
+    }
+    if (tx == 0 && row < n) {
+        factor_tile[ty] = factors[row];
+    }
+    __syncthreads();
+
+    if (row < n && col < n) {
+        A[row * n + col] -= factor_tile[ty] * pivot_tile[tx];
+    }
+}
+
 __global__ void back_substitution_v1_kernel(float* A, float* b, int n,
                                             float tol, int* status) {
     if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
@@ -404,6 +433,14 @@ static void cuda_check(cudaError_t result, const char* operation) {
     if (result != cudaSuccess) {
         throw std::runtime_error(std::string(operation) + ": " +
                                  cudaGetErrorString(result));
+    }
+}
+
+static void cusolver_check(cusolverStatus_t result, const char* operation) {
+    if (result != CUSOLVER_STATUS_SUCCESS) {
+        throw std::runtime_error(std::string(operation) +
+                                 ": cuSOLVER status " +
+                                 std::to_string(static_cast<int>(result)));
     }
 }
 
@@ -762,6 +799,180 @@ static GpuSolveTimedResult gauss_gpu_v3(float* A, float* b, int n, float tol,
 
         cleanup();
         return {total_ms, status == 0, phases};
+    } catch (...) {
+        cleanup();
+        throw;
+    }
+}
+
+static GpuSolveTimedResult gauss_gpu_v5a(float* A, float* b, int n, float tol,
+                                         int block_size = 256) {
+    float *d_A = nullptr, *d_b = nullptr, *d_factors = nullptr;
+    float* d_pivot_abs = nullptr;
+    int *d_status = nullptr, *d_pivot = nullptr;
+    cudaEvent_t e0 = nullptr, e_phase = nullptr;
+
+    auto cleanup = [&]() {
+        if (e0) cudaEventDestroy(e0);
+        if (e_phase) cudaEventDestroy(e_phase);
+        if (d_A) cudaFree(d_A);
+        if (d_b) cudaFree(d_b);
+        if (d_factors) cudaFree(d_factors);
+        if (d_pivot_abs) cudaFree(d_pivot_abs);
+        if (d_status) cudaFree(d_status);
+        if (d_pivot) cudaFree(d_pivot);
+    };
+
+    try {
+        cuda_check(cudaMalloc(&d_A, n * n * sizeof(float)), "cudaMalloc(A)");
+        cuda_check(cudaMalloc(&d_b, n * sizeof(float)), "cudaMalloc(b)");
+        cuda_check(cudaMalloc(&d_factors, n * sizeof(float)),
+                   "cudaMalloc(factors)");
+        cuda_check(cudaMalloc(&d_status, sizeof(int)), "cudaMalloc(status)");
+        cuda_check(cudaMalloc(&d_pivot, sizeof(int)), "cudaMalloc(pivot)");
+        cuda_check(cudaMalloc(&d_pivot_abs, sizeof(float)),
+                   "cudaMalloc(pivot_abs)");
+        cuda_check(cudaMemset(d_status, 0, sizeof(int)), "cudaMemset(status)");
+
+        cuda_check(cudaMemcpy(d_A, A, n * n * sizeof(float),
+                              cudaMemcpyHostToDevice), "copy A to device");
+        cuda_check(cudaMemcpy(d_b, b, n * sizeof(float),
+                              cudaMemcpyHostToDevice), "copy b to device");
+
+        cuda_check(cudaEventCreate(&e0), "cudaEventCreate(start)");
+        cuda_check(cudaEventCreate(&e_phase), "cudaEventCreate(phase)");
+        cuda_check(cudaEventRecord(e0), "cudaEventRecord(start)");
+
+        GpuPhaseTimes phases;
+        double total_ms = 0.0;
+
+        for (int k = 0; k < n - 1; k++) {
+            find_pivot_v2_kernel<<<1, 1>>>(d_A, n, k, d_pivot, d_pivot_abs,
+                                           d_status);
+            cuda_check(cudaGetLastError(), "launch find_pivot_v2_kernel");
+            float phase = time_last_cuda_phase(e0, e_phase, "time pivot phase");
+            phases.pivot_ms += phase;
+            total_ms += phase;
+
+            swap_and_check_v2_kernel<<<1, 1>>>(d_A, d_b, n, k, tol, d_pivot,
+                                               d_pivot_abs, d_status);
+            cuda_check(cudaGetLastError(), "launch swap_and_check_v2_kernel");
+            phase = time_last_cuda_phase(e0, e_phase, "time row-swap phase");
+            phases.row_swap_ms += phase;
+            total_ms += phase;
+
+            int rows = n - k - 1;
+            int row_grid = (rows + block_size - 1) / block_size;
+            compute_factors_v1_kernel<<<row_grid, block_size>>>(
+                d_A, d_b, d_factors, n, k, d_status);
+            cuda_check(cudaGetLastError(), "launch compute_factors_v1_kernel");
+            phase = time_last_cuda_phase(e0, e_phase, "time factor phase");
+            phases.factor_ms += phase;
+            total_ms += phase;
+
+            dim3 update_block(16, 16);
+            dim3 update_grid((rows + update_block.x - 1) / update_block.x,
+                             (rows + update_block.y - 1) / update_block.y);
+            update_trailing_matrix_v5a_kernel<<<update_grid, update_block>>>(
+                d_A, d_factors, n, k, d_status);
+            cuda_check(cudaGetLastError(),
+                       "launch update_trailing_matrix_v5a_kernel");
+            phase = time_last_cuda_phase(e0, e_phase, "time update phase");
+            phases.update_ms += phase;
+            total_ms += phase;
+        }
+
+        back_substitution_v1_kernel<<<1, 1>>>(d_A, d_b, n, tol, d_status);
+        cuda_check(cudaGetLastError(), "launch back_substitution_v1_kernel");
+        float phase = time_last_cuda_phase(e0, e_phase, "time back-sub phase");
+        phases.back_sub_ms += phase;
+        total_ms += phase;
+
+        int status = 0;
+        cuda_check(cudaMemcpy(&status, d_status, sizeof(int),
+                              cudaMemcpyDeviceToHost), "copy solve status");
+        cuda_check(cudaMemcpy(A, d_A, n * n * sizeof(float),
+                              cudaMemcpyDeviceToHost), "copy A to host");
+        cuda_check(cudaMemcpy(b, d_b, n * sizeof(float),
+                              cudaMemcpyDeviceToHost), "copy b to host");
+
+        cleanup();
+        return {total_ms, status == 0, phases};
+    } catch (...) {
+        cleanup();
+        throw;
+    }
+}
+
+static GpuSolveResult gauss_gpu_v4_cusolver(const float* A_row_major, float* b,
+                                            int n) {
+    cusolverDnHandle_t handle = nullptr;
+    float *d_A = nullptr, *d_b = nullptr, *d_work = nullptr;
+    int *d_ipiv = nullptr, *d_info = nullptr;
+    cudaEvent_t e0 = nullptr, e1 = nullptr;
+
+    auto cleanup = [&]() {
+        if (e0) cudaEventDestroy(e0);
+        if (e1) cudaEventDestroy(e1);
+        if (d_A) cudaFree(d_A);
+        if (d_b) cudaFree(d_b);
+        if (d_work) cudaFree(d_work);
+        if (d_ipiv) cudaFree(d_ipiv);
+        if (d_info) cudaFree(d_info);
+        if (handle) cusolverDnDestroy(handle);
+    };
+
+    try {
+        std::vector<float> A_col_major(n * n);
+        for (int row = 0; row < n; row++) {
+            for (int col = 0; col < n; col++) {
+                A_col_major[col * n + row] = A_row_major[row * n + col];
+            }
+        }
+
+        cusolver_check(cusolverDnCreate(&handle), "cusolverDnCreate");
+        cuda_check(cudaMalloc(&d_A, n * n * sizeof(float)), "cudaMalloc(A)");
+        cuda_check(cudaMalloc(&d_b, n * sizeof(float)), "cudaMalloc(b)");
+        cuda_check(cudaMalloc(&d_ipiv, n * sizeof(int)), "cudaMalloc(ipiv)");
+        cuda_check(cudaMalloc(&d_info, sizeof(int)), "cudaMalloc(info)");
+
+        cuda_check(cudaMemcpy(d_A, A_col_major.data(), n * n * sizeof(float),
+                              cudaMemcpyHostToDevice), "copy A to device");
+        cuda_check(cudaMemcpy(d_b, b, n * sizeof(float),
+                              cudaMemcpyHostToDevice), "copy b to device");
+
+        int work_size = 0;
+        cusolver_check(cusolverDnSgetrf_bufferSize(handle, n, n, d_A, n,
+                                                   &work_size),
+                       "cusolverDnSgetrf_bufferSize");
+        cuda_check(cudaMalloc(&d_work, work_size * sizeof(float)),
+                   "cudaMalloc(work)");
+
+        cuda_check(cudaEventCreate(&e0), "cudaEventCreate(start)");
+        cuda_check(cudaEventCreate(&e1), "cudaEventCreate(stop)");
+        cuda_check(cudaEventRecord(e0), "cudaEventRecord(start)");
+
+        cusolver_check(cusolverDnSgetrf(handle, n, n, d_A, n, d_work, d_ipiv,
+                                        d_info),
+                       "cusolverDnSgetrf");
+        cusolver_check(cusolverDnSgetrs(handle, CUBLAS_OP_N, n, 1, d_A, n,
+                                        d_ipiv, d_b, n, d_info),
+                       "cusolverDnSgetrs");
+
+        cuda_check(cudaEventRecord(e1), "cudaEventRecord(stop)");
+        cuda_check(cudaEventSynchronize(e1), "CUDA cuSOLVER solve");
+
+        float ms = 0.0f;
+        cuda_check(cudaEventElapsedTime(&ms, e0, e1), "cudaEventElapsedTime");
+
+        int info = 0;
+        cuda_check(cudaMemcpy(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost),
+                   "copy info to host");
+        cuda_check(cudaMemcpy(b, d_b, n * sizeof(float), cudaMemcpyDeviceToHost),
+                   "copy x to host");
+
+        cleanup();
+        return {static_cast<double>(ms), info == 0};
     } catch (...) {
         cleanup();
         throw;
@@ -1287,6 +1498,149 @@ void run_ablation_case_v3(int n, int block_size, const std::string& out_path) {
               << "  cpu_gpu_l2=" << cpu_gpu_l2 << "\n";
 }
 
+void run_ablation_case_v5a(int n, int block_size, const std::string& out_path) {
+    const float tol = 1e-6f;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    std::vector<float> A_cpu = to_float_vector(A_original);
+    std::vector<float> b_cpu = to_float_vector(b_original);
+    std::vector<float> A_gpu = A_cpu;
+    std::vector<float> b_gpu = b_cpu;
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double cpu_ms =
+        std::chrono::duration<double, std::milli>(t1 - t0).count();
+    if (x_cpu.empty()) {
+        throw std::runtime_error("CPU V1 reference reported singular matrix");
+    }
+
+    GpuSolveTimedResult gpu = gauss_gpu_v5a(A_gpu.data(), b_gpu.data(), n, tol,
+                                            block_size);
+    if (!gpu.success) {
+        throw std::runtime_error("GPU V5a solver reported singular matrix");
+    }
+
+    std::vector<double> x_gpu = to_double_vector(b_gpu);
+    std::vector<double> x_cpu_double = to_double_vector(x_cpu);
+    double residual =
+        max_abs_residual(A_original, b_original, x_gpu, n);
+    double residual_l2 =
+        normalized_residual_l2(A_original, b_original, x_gpu, n);
+    double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
+    double solution_max = max_abs_solution_error(x_gpu, x_ref);
+    double cpu_gpu_l2 = relative_solution_error_l2(x_gpu, x_cpu_double);
+
+    AblationRow row;
+    row.timestamp = current_timestamp();
+    row.variant = "V5a";
+    row.n = n;
+    row.block_size = block_size;
+    row.precision = "FP32";
+    row.pivoting = "ordinary_partial_pivoting";
+    row.cpu_ms = cpu_ms;
+    row.gpu_ms = gpu.elapsed_ms;
+    row.effective_gflops = effective_lu_gflops(n, gpu.elapsed_ms);
+    row.residual_norm2 = residual_l2;
+    row.residual_max = residual;
+    row.solution_error_norm2 = solution_l2;
+    row.solution_error_max = solution_max;
+    row.pivot_ms = gpu.phases.pivot_ms;
+    row.row_swap_ms = gpu.phases.row_swap_ms;
+    row.factor_ms = gpu.phases.factor_ms;
+    row.update_ms = gpu.phases.update_ms;
+    row.back_sub_ms = gpu.phases.back_sub_ms;
+    row.pivot_pct = phase_percent(row.pivot_ms, row.gpu_ms);
+    row.row_swap_pct = phase_percent(row.row_swap_ms, row.gpu_ms);
+    row.factor_pct = phase_percent(row.factor_ms, row.gpu_ms);
+    row.update_pct = phase_percent(row.update_ms, row.gpu_ms);
+    row.back_sub_pct = phase_percent(row.back_sub_ms, row.gpu_ms);
+    row.driver_version = driver_version_string();
+    append_ablation_csv(out_path, row);
+
+    std::cout << "  variant=" << row.variant
+              << "  n=" << n
+              << "  block=" << block_size
+              << "  CPU=" << cpu_ms << " ms"
+              << "  GPU=" << gpu.elapsed_ms << " ms"
+              << "  pivot%=" << row.pivot_pct
+              << "  row_swap%=" << row.row_swap_pct
+              << "  factor%=" << row.factor_pct
+              << "  update%=" << row.update_pct
+              << "  back_sub%=" << row.back_sub_pct
+              << "  residual_l2=" << residual_l2
+              << "  solution_error_l2=" << solution_l2
+              << "  cpu_gpu_l2=" << cpu_gpu_l2 << "\n";
+}
+
+void run_ablation_case_v4(int n, int block_size, const std::string& out_path) {
+    const float tol = 1e-6f;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    std::vector<float> A_cpu = to_float_vector(A_original);
+    std::vector<float> b_cpu = to_float_vector(b_original);
+    std::vector<float> A_gpu = A_cpu;
+    std::vector<float> b_gpu = b_cpu;
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double cpu_ms =
+        std::chrono::duration<double, std::milli>(t1 - t0).count();
+    if (x_cpu.empty()) {
+        throw std::runtime_error("CPU V1 reference reported singular matrix");
+    }
+
+    GpuSolveResult gpu = gauss_gpu_v4_cusolver(A_gpu.data(), b_gpu.data(), n);
+    if (!gpu.success) {
+        throw std::runtime_error("cuSOLVER V4 reported singular/factorization failure");
+    }
+
+    std::vector<double> x_gpu = to_double_vector(b_gpu);
+    std::vector<double> x_cpu_double = to_double_vector(x_cpu);
+    double residual =
+        max_abs_residual(A_original, b_original, x_gpu, n);
+    double residual_l2 =
+        normalized_residual_l2(A_original, b_original, x_gpu, n);
+    double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
+    double solution_max = max_abs_solution_error(x_gpu, x_ref);
+    double cpu_gpu_l2 = relative_solution_error_l2(x_gpu, x_cpu_double);
+
+    AblationRow row;
+    row.timestamp = current_timestamp();
+    row.variant = "V4";
+    row.n = n;
+    row.block_size = block_size;
+    row.precision = "FP32";
+    row.pivoting = "ordinary_partial_pivoting_cusolver_getrf";
+    row.cpu_ms = cpu_ms;
+    row.gpu_ms = gpu.elapsed_ms;
+    row.effective_gflops = effective_lu_gflops(n, gpu.elapsed_ms);
+    row.residual_norm2 = residual_l2;
+    row.residual_max = residual;
+    row.solution_error_norm2 = solution_l2;
+    row.solution_error_max = solution_max;
+    row.driver_version = driver_version_string();
+    append_ablation_csv(out_path, row);
+
+    std::cout << "  variant=" << row.variant
+              << "  n=" << n
+              << "  block=" << block_size
+              << "  CPU=" << cpu_ms << " ms"
+              << "  GPU=" << gpu.elapsed_ms << " ms"
+              << "  GFLOP/s=" << row.effective_gflops
+              << "  residual_l2=" << residual_l2
+              << "  solution_error_l2=" << solution_l2
+              << "  cpu_gpu_l2=" << cpu_gpu_l2 << "\n";
+}
+
 int run_ablation_cli(int argc, char** argv) {
     std::vector<int> n_values{500, 1000};
     int block_size = 512;
@@ -1318,6 +1672,10 @@ int run_ablation_cli(int argc, char** argv) {
             run_ablation_case_v2(n, block_size, out_path);
         } else if (variant == "V3") {
             run_ablation_case_v3(n, block_size, out_path);
+        } else if (variant == "V5a") {
+            run_ablation_case_v5a(n, block_size, out_path);
+        } else if (variant == "V4") {
+            run_ablation_case_v4(n, block_size, out_path);
         } else if (variant == "pilot") {
             run_ablation_case(n, block_size, out_path);
         } else {
@@ -1478,6 +1836,48 @@ TEST(GaussV3Correctness, MatchesKnownSolutionAndReportsPhases) {
     std::vector<float> b = to_float_vector(b_original);
     GpuSolveTimedResult result =
         gauss_gpu_v3(A.data(), b.data(), n, 1e-6f, 128);
+
+    ASSERT_TRUE(result.success);
+    std::vector<double> x_gpu = to_double_vector(b);
+    EXPECT_LT(relative_solution_error_l2(x_gpu, x_ref), 1e-5);
+    EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n), 1e-6);
+    EXPECT_GT(result.elapsed_ms, 0.0);
+    EXPECT_GT(result.phases.pivot_ms, 0.0);
+    EXPECT_GT(result.phases.row_swap_ms, 0.0);
+    EXPECT_GT(result.phases.factor_ms, 0.0);
+    EXPECT_GT(result.phases.update_ms, 0.0);
+    EXPECT_GT(result.phases.back_sub_ms, 0.0);
+}
+
+TEST(GaussV4Correctness, CuSolverMatchesKnownSolution) {
+    const int n = 4;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    std::vector<float> A = to_float_vector(A_original);
+    std::vector<float> b = to_float_vector(b_original);
+    GpuSolveResult result = gauss_gpu_v4_cusolver(A.data(), b.data(), n);
+
+    ASSERT_TRUE(result.success);
+    std::vector<double> x_gpu = to_double_vector(b);
+    EXPECT_LT(relative_solution_error_l2(x_gpu, x_ref), 1e-5);
+    EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n), 1e-6);
+    EXPECT_GT(result.elapsed_ms, 0.0);
+}
+
+TEST(GaussV5aCorrectness, MatchesKnownSolutionAndReportsPhases) {
+    const int n = 4;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    std::vector<float> A = to_float_vector(A_original);
+    std::vector<float> b = to_float_vector(b_original);
+    GpuSolveTimedResult result =
+        gauss_gpu_v5a(A.data(), b.data(), n, 1e-6f, 128);
 
     ASSERT_TRUE(result.success);
     std::vector<double> x_gpu = to_double_vector(b);
