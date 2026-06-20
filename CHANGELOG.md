@@ -25,6 +25,15 @@ All notable changes to this project are documented here. The format is based on
 - Implemented `V5a`, a shared-memory/tiled trailing-update custom variant for
   measuring whether memory-hierarchy optimization improves over the V3
   2D global-memory update.
+- Added `--tile-rows` and `--tile-cols` tuning parameters for the V5a/V5af
+  shared-memory trailing-update kernel; tile shape is recorded in the CSV
+  variant label, for example `V5af_t32x32`.
+- Added uninstrumented fast custom timing variants `V3f` and `V5af` so RQ1
+  custom-vs-cuSOLVER comparisons are not inflated by per-phase event
+  synchronization overhead.
+- Added `VLU`, a custom LU-decomposition variant that stores implicit `P/L/U`
+  factors and solves with forward/back substitution for a closer structural
+  comparison with cuSOLVER `getrf/getrs`.
 
 ### Fixed
 - Replaced the monolithic elimination kernel's block-local `__syncthreads()`

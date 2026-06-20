@@ -115,10 +115,32 @@ out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V4 --n 500,1000 
 ```
 
 `V5a` keeps the V3 phase instrumentation but replaces the 2D global-memory
-trailing update with a shared-memory/tiled update:
+trailing update with a shared-memory/tiled update. The default tile is `16x16`;
+use `--tile-rows` and `--tile-cols` to tune the update block shape:
 
 ```
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V5a --n 500,1000 --block 512 --out results\ablation_v5a.csv
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V5a --n 500,1000 --block 512 --tile-rows 32 --tile-cols 32 --out results\ablation_v5a_tile.csv
+```
+
+For RQ1 timing against cuSOLVER, use the uninstrumented fast custom variants:
+
+```
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V3f --n 500,1000 --block 512 --out results\ablation_fast.csv
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V5af --n 500,1000 --block 512 --tile-rows 32 --tile-cols 32 --out results\ablation_fast.csv
+```
+
+`V3f` and `V5af` use the same update kernels as V3 and V5a, respectively, but
+omit per-phase event synchronization. Use V3/V5a for phase breakdown and
+V3f/V5af for fairer custom-vs-cuSOLVER solve-time comparisons. Tiled rows are
+encoded in the CSV `variant` label, for example `V5af_t32x32`.
+
+`VLU` is a custom LU-decomposition variant that more closely mirrors the
+cuSOLVER `getrf/getrs` structure: it factors `A` into implicit `P/L/U`, stores
+the pivot vector, then solves with forward/back substitution.
+
+```
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant VLU --n 500,1000 --block 512 --out results\ablation_lu.csv
 ```
 
 The historical corrected FP64 scaled-pivot solver can still be run for pilot
