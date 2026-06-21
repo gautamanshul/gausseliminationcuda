@@ -1,0 +1,4 @@
+matrix,group,source_url,n,nnz,kind,symmetric,positive_definite,full_rank,condition_number,local_path,selection_reason
+bcsstk01,HB,https://sparse.tamu.edu/HB/bcsstk01,48,400,Structural Problem,yes,yes,yes,8.823363e5,data/real_matrices/suitesparse/bcsstk01/bcsstk01.mtx,Tiny full-rank SPD stiffness matrix for V10 loader and severe-conditioning smoke evidence.
+bcsstk05,HB,https://sparse.tamu.edu/HB/bcsstk05,153,2423,Structural Problem,yes,yes,yes,1.428114e4,data/real_matrices/suitesparse/bcsstk05/bcsstk05.mtx,Small full-rank SPD structural matrix with moderate conditioning.
+bcsstk06,HB,https://sparse.tamu.edu/HB/bcsstk06,420,7860,Structural Problem,yes,yes,yes,7.570047e6,data/real_matrices/suitesparse/bcsstk06/bcsstk06.mtx,Larger bounded full-rank SPD structural matrix that still densifies safely on GTX 1650.

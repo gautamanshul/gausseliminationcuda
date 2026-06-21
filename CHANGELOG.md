@@ -28,6 +28,10 @@ All notable changes to this project are documented here. The format is based on
 - Added `--tile-rows` and `--tile-cols` tuning parameters for the V5a/V5af
   shared-memory trailing-update kernel; tile shape is recorded in the CSV
   variant label, for example `V5af_t32x32`.
+- Added V10 real-matrix supplement support via `--real-matrix`, including
+  Matrix Market/dense text loading, deterministic `b = A * x_ref` generation,
+  a small `toy5.mtx` smoke-test matrix, and real-matrix CSV labels such as
+  `V10_toy5_V3f`.
 - Added uninstrumented fast custom timing variants `V3f` and `V5af` so RQ1
   custom-vs-cuSOLVER comparisons are not inflated by per-phase event
   synchronization overhead.

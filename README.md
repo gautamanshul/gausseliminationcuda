@@ -145,6 +145,26 @@ the pivot vector, then solves with forward/back substitution.
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant VLU --n 500,1000 --block 512 --out results\ablation_lu.csv
 ```
 
+### V10 Real-Matrix Supplement
+
+`V10` adds an external-validity path for small real or structured matrices.
+Pass `--real-matrix` to load a Matrix Market (`.mtx`) or dense text/CSV matrix,
+densify it in row-major order, build a deterministic reference solution
+`x_ref`, and compute `b = A * x_ref`. This lets the same residual and solution
+error metrics be reported even when the source matrix does not ship with a
+right-hand side.
+
+```powershell
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V3f --real-matrix data\real_matrices\toy5.mtx --matrix-name toy5 --out results\v10_real_matrix_smoke.csv
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V4 --real-matrix data\real_matrices\toy5.mtx --matrix-name toy5 --out results\v10_real_matrix_smoke.csv
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V5af --tile-rows 32 --tile-cols 32 --real-matrix data\real_matrices\toy5.mtx --matrix-name toy5 --out results\v10_real_matrix_smoke.csv
+```
+
+V10 rows use the normal ablation CSV schema and encode the matrix identity in the
+variant label, for example `V10_toy5_V3f` or `V10_toy5_V5af_t32x32`. For
+dissertation evidence, replace the toy file with a small cited SuiteSparse
+subset that fits GTX 1650 memory and record skipped matrices separately.
+
 The historical corrected FP64 scaled-pivot solver can still be run for pilot
 comparison with:
 

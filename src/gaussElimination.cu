@@ -31,6 +31,7 @@ void __syncthreads();
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -1373,6 +1374,14 @@ struct AblationRow {
     std::string driver_version;
 };
 
+struct DenseSystem {
+    int n = 0;
+    std::string name;
+    std::vector<double> A;
+    std::vector<double> b;
+    std::vector<double> x_ref;
+};
+
 std::string current_timestamp() {
     std::time_t t = std::time(nullptr);
     char buf[32];
@@ -1536,6 +1545,195 @@ std::vector<int> parse_n_values(const std::string& spec) {
         if (!item.empty()) values.push_back(std::stoi(item));
     }
     return values;
+}
+
+std::string trim_copy(const std::string& s) {
+    size_t first = 0;
+    while (first < s.size() &&
+           std::isspace(static_cast<unsigned char>(s[first]))) {
+        first++;
+    }
+    size_t last = s.size();
+    while (last > first &&
+           std::isspace(static_cast<unsigned char>(s[last - 1]))) {
+        last--;
+    }
+    return s.substr(first, last - first);
+}
+
+std::string csv_safe_label(std::string value) {
+    for (char& c : value) {
+        if (c == ',' || c == ' ' || c == '\\' || c == '/' || c == ':') c = '_';
+    }
+    return value;
+}
+
+std::vector<double> deterministic_reference_solution(int n) {
+    std::vector<double> x(n);
+    for (int i = 0; i < n; i++) {
+        x[i] = 1.0 + 0.05 * static_cast<double>((i % 11) - 5);
+    }
+    return x;
+}
+
+std::vector<double> multiply_dense(const std::vector<double>& A,
+                                   const std::vector<double>& x, int n) {
+    std::vector<double> b(n, 0.0);
+    for (int i = 0; i < n; i++) {
+        double sum = 0.0;
+        for (int j = 0; j < n; j++) sum += A[i * n + j] * x[j];
+        b[i] = sum;
+    }
+    return b;
+}
+
+DenseSystem make_dense_system_from_matrix(std::vector<double> A, int n,
+                                          const std::string& name) {
+    DenseSystem system;
+    system.n = n;
+    system.name = csv_safe_label(name);
+    system.A = std::move(A);
+    system.x_ref = deterministic_reference_solution(n);
+    system.b = multiply_dense(system.A, system.x_ref, n);
+    return system;
+}
+
+DenseSystem load_matrix_market_dense_system(const std::string& path,
+                                            const std::string& name) {
+    std::ifstream f(path);
+    if (!f.good()) {
+        throw std::runtime_error("could not open real matrix file: " + path);
+    }
+
+    std::string line;
+    if (!std::getline(f, line)) {
+        throw std::runtime_error("empty matrix file: " + path);
+    }
+
+    std::stringstream header(line);
+    std::string banner, object, format, field, symmetry;
+    header >> banner >> object >> format >> field >> symmetry;
+    if (banner != "%%MatrixMarket" || object != "matrix") {
+        throw std::runtime_error("unsupported Matrix Market header in: " + path);
+    }
+
+    do {
+        if (!std::getline(f, line)) {
+            throw std::runtime_error("missing Matrix Market size line: " + path);
+        }
+        line = trim_copy(line);
+    } while (line.empty() || line[0] == '%');
+
+    int rows = 0;
+    int cols = 0;
+    int entries = 0;
+    std::stringstream dims(line);
+    if (format == "coordinate") {
+        dims >> rows >> cols >> entries;
+    } else if (format == "array") {
+        dims >> rows >> cols;
+        entries = rows * cols;
+    } else {
+        throw std::runtime_error("unsupported Matrix Market format: " + format);
+    }
+    if (rows <= 0 || rows != cols) {
+        throw std::runtime_error("V10 requires a square matrix");
+    }
+
+    std::vector<double> A(static_cast<size_t>(rows) * rows, 0.0);
+    if (format == "coordinate") {
+        for (int e = 0; e < entries; e++) {
+            int i = 0;
+            int j = 0;
+            double value = 0.0;
+            f >> i >> j >> value;
+            if (i < 1 || i > rows || j < 1 || j > cols) {
+                throw std::runtime_error("Matrix Market index out of range");
+            }
+            A[(i - 1) * rows + (j - 1)] += value;
+            if ((symmetry == "symmetric" || symmetry == "hermitian") && i != j) {
+                A[(j - 1) * rows + (i - 1)] += value;
+            }
+        }
+    } else {
+        // Matrix Market array format is column-major.
+        for (int j = 0; j < cols; j++) {
+            for (int i = 0; i < rows; i++) {
+                double value = 0.0;
+                f >> value;
+                A[i * rows + j] = value;
+            }
+        }
+    }
+
+    std::string matrix_name = name.empty()
+                                  ? std::filesystem::path(path).stem().string()
+                                  : name;
+    return make_dense_system_from_matrix(std::move(A), rows, matrix_name);
+}
+
+DenseSystem load_dense_csv_system(const std::string& path,
+                                  const std::string& name) {
+    std::ifstream f(path);
+    if (!f.good()) {
+        throw std::runtime_error("could not open dense matrix file: " + path);
+    }
+
+    std::vector<std::vector<double>> rows;
+    std::string line;
+    while (std::getline(f, line)) {
+        line = trim_copy(line);
+        if (line.empty() || line[0] == '#') continue;
+        std::replace(line.begin(), line.end(), ',', ' ');
+        std::stringstream ss(line);
+        std::vector<double> row;
+        double value = 0.0;
+        while (ss >> value) row.push_back(value);
+        if (!row.empty()) rows.push_back(std::move(row));
+    }
+    if (rows.empty()) {
+        throw std::runtime_error("dense matrix file has no numeric rows: " + path);
+    }
+
+    int n = 0;
+    size_t start_row = 0;
+    if (rows[0].size() == 1 && rows.size() > 1) {
+        n = static_cast<int>(rows[0][0]);
+        start_row = 1;
+    } else {
+        n = static_cast<int>(rows.size());
+    }
+    if (n <= 0 || rows.size() - start_row != static_cast<size_t>(n)) {
+        throw std::runtime_error("dense matrix file must contain an n x n matrix");
+    }
+
+    std::vector<double> A(static_cast<size_t>(n) * n, 0.0);
+    for (int i = 0; i < n; i++) {
+        const auto& row = rows[start_row + i];
+        if (row.size() != static_cast<size_t>(n)) {
+            throw std::runtime_error("dense matrix row has wrong column count");
+        }
+        for (int j = 0; j < n; j++) A[i * n + j] = row[j];
+    }
+
+    std::string matrix_name = name.empty()
+                                  ? std::filesystem::path(path).stem().string()
+                                  : name;
+    return make_dense_system_from_matrix(std::move(A), n, matrix_name);
+}
+
+DenseSystem load_real_matrix_system(const std::string& path,
+                                    const std::string& name) {
+    std::ifstream f(path);
+    if (!f.good()) {
+        throw std::runtime_error("could not open real matrix file: " + path);
+    }
+    std::string first;
+    std::getline(f, first);
+    if (first.rfind("%%MatrixMarket", 0) == 0) {
+        return load_matrix_market_dense_system(path, name);
+    }
+    return load_dense_csv_system(path, name);
 }
 
 void make_known_solution_system(int n, std::vector<double>& A,
@@ -2131,7 +2329,127 @@ void run_ablation_case_v4(int n, int block_size, const std::string& out_path) {
               << "  GFLOP/s=" << row.effective_gflops
               << "  residual_l2=" << residual_l2
               << "  solution_error_l2=" << solution_l2
-              << "  cpu_gpu_l2=" << cpu_gpu_l2 << "\n";
+               << "  cpu_gpu_l2=" << cpu_gpu_l2 << "\n";
+}
+
+void append_real_matrix_row(const std::string& out_path,
+                            const DenseSystem& system,
+                            const std::string& variant_label,
+                            int block_size,
+                            const std::string& precision,
+                            const std::string& pivoting,
+                            double cpu_ms,
+                            double gpu_ms,
+                            const std::vector<double>& x_gpu) {
+    AblationRow row;
+    row.timestamp = current_timestamp();
+    row.variant = "V10_" + system.name + "_" + variant_label;
+    row.n = system.n;
+    row.block_size = block_size;
+    row.precision = precision;
+    row.pivoting = pivoting;
+    row.cpu_ms = cpu_ms;
+    row.gpu_ms = gpu_ms;
+    row.effective_gflops = effective_lu_gflops(system.n, gpu_ms);
+    row.residual_norm2 =
+        normalized_residual_l2(system.A, system.b, x_gpu, system.n);
+    row.residual_max = max_abs_residual(system.A, system.b, x_gpu, system.n);
+    row.solution_error_norm2 =
+        relative_solution_error_l2(x_gpu, system.x_ref);
+    row.solution_error_max = max_abs_solution_error(x_gpu, system.x_ref);
+    row.driver_version = driver_version_string();
+    append_ablation_csv(out_path, row);
+
+    std::cout << "  variant=" << row.variant
+              << "  n=" << system.n
+              << "  block=" << block_size
+              << "  CPU=" << cpu_ms << " ms"
+              << "  GPU=" << gpu_ms << " ms"
+              << "  GFLOP/s=" << row.effective_gflops
+              << "  residual_l2=" << row.residual_norm2
+              << "  solution_error_l2=" << row.solution_error_norm2 << "\n";
+}
+
+void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
+                                   const std::string& out_path,
+                                   const std::string& variant,
+                                   TileShape tile = {}) {
+    const float tol = 1e-6f;
+    std::vector<float> A_cpu = to_float_vector(system.A);
+    std::vector<float> b_cpu = to_float_vector(system.b);
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), system.n, tol);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double cpu_ms =
+        std::chrono::duration<double, std::milli>(t1 - t0).count();
+    if (x_cpu.empty()) {
+        throw std::runtime_error("CPU reference reported singular real matrix");
+    }
+
+    if (variant == "V1") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu =
+            gauss_gpu_v1(A_gpu.data(), b_gpu.data(), system.n, tol, block_size);
+        if (!gpu.success) throw std::runtime_error("V10 V1 GPU failed");
+        append_real_matrix_row(out_path, system, "V1", block_size, "FP32",
+                               "ordinary_partial_pivoting", cpu_ms,
+                               gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V3f") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_fast_custom(
+            A_gpu.data(), b_gpu.data(), system.n, tol, FastUpdateKind::Global2D,
+            block_size, tile);
+        if (!gpu.success) throw std::runtime_error("V10 V3f GPU failed");
+        append_real_matrix_row(out_path, system, "V3f", block_size, "FP32",
+                               "ordinary_partial_pivoting", cpu_ms,
+                               gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V4") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu =
+            gauss_gpu_v4_cusolver(A_gpu.data(), b_gpu.data(), system.n);
+        if (!gpu.success) throw std::runtime_error("V10 V4 cuSOLVER failed");
+        append_real_matrix_row(out_path, system, "V4", block_size, "FP32",
+                               "ordinary_partial_pivoting_cusolver_getrf",
+                               cpu_ms, gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V5af") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_fast_custom(
+            A_gpu.data(), b_gpu.data(), system.n, tol,
+            FastUpdateKind::TiledShared, block_size, tile);
+        if (!gpu.success) throw std::runtime_error("V10 V5af GPU failed");
+        append_real_matrix_row(out_path, system, "V5af" + tile_suffix(tile),
+                               block_size, "FP32",
+                               "ordinary_partial_pivoting", cpu_ms,
+                               gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V5bf") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_fast_custom(
+            A_gpu.data(), b_gpu.data(), system.n, tol,
+            FastUpdateKind::TiledSharedUnrolled2, block_size, tile);
+        if (!gpu.success) throw std::runtime_error("V10 V5bf GPU failed");
+        append_real_matrix_row(out_path, system, "V5bf" + tile_suffix(tile),
+                               block_size, "FP32",
+                               "ordinary_partial_pivoting", cpu_ms,
+                               gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "VLU") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu =
+            gauss_gpu_lu_custom(A_gpu.data(), b_gpu.data(), system.n, tol,
+                                block_size);
+        if (!gpu.success) throw std::runtime_error("V10 VLU GPU failed");
+        append_real_matrix_row(out_path, system, "VLU", block_size, "FP32",
+                               "ordinary_partial_pivoting_custom_lu", cpu_ms,
+                               gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else {
+        throw std::runtime_error("unsupported V10 variant: " + variant);
+    }
 }
 
 int run_ablation_cli(int argc, char** argv) {
@@ -2139,6 +2457,8 @@ int run_ablation_cli(int argc, char** argv) {
     int block_size = 512;
     std::string out_path = "results/ablation_pilot.csv";
     std::string variant = "V1";
+    std::string real_matrix_path;
+    std::string matrix_name;
     TileShape tile;
 
     for (int i = 2; i < argc; i++) {
@@ -2154,6 +2474,10 @@ int run_ablation_cli(int argc, char** argv) {
             out_path = argv[++i];
         } else if (std::strcmp(argv[i], "--variant") == 0 && i + 1 < argc) {
             variant = argv[++i];
+        } else if (std::strcmp(argv[i], "--real-matrix") == 0 && i + 1 < argc) {
+            real_matrix_path = argv[++i];
+        } else if (std::strcmp(argv[i], "--matrix-name") == 0 && i + 1 < argc) {
+            matrix_name = argv[++i];
         } else {
             std::cerr << "Unknown ablation argument: " << argv[i] << "\n";
             return 2;
@@ -2164,6 +2488,15 @@ int run_ablation_cli(int argc, char** argv) {
               << "  output=" << out_path << "\n"
               << "  variant=" << variant << "\n"
               << "  tile=" << tile.rows << "x" << tile.cols << "\n";
+    if (!real_matrix_path.empty()) {
+        DenseSystem system = load_real_matrix_system(real_matrix_path,
+                                                     matrix_name);
+        std::cout << "  real_matrix=" << system.name
+                  << "  n=" << system.n << "\n";
+        run_ablation_case_real_matrix(system, block_size, out_path, variant,
+                                      tile);
+        return 0;
+    }
     for (int n : n_values) {
         if (variant == "V1") {
             run_ablation_case_v1(n, block_size, out_path);
@@ -2495,6 +2828,27 @@ TEST(GaussLUCorrectness, CustomLUMatchesKnownSolution) {
     EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
               1e-6);
     EXPECT_GT(result.elapsed_ms, 0.0);
+}
+
+TEST(GaussV10RealMatrix, LoadsMatrixMarketAndSolvesWithV3f) {
+    DenseSystem system = load_real_matrix_system(
+        "data/real_matrices/toy5.mtx", "toy5");
+
+    ASSERT_EQ(system.n, 5);
+    ASSERT_EQ(system.A.size(), 25u);
+    ASSERT_EQ(system.b.size(), 5u);
+    ASSERT_EQ(system.x_ref.size(), 5u);
+
+    std::vector<float> A = to_float_vector(system.A);
+    std::vector<float> b = to_float_vector(system.b);
+    GpuSolveResult result = gauss_gpu_fast_custom(
+        A.data(), b.data(), system.n, 1e-6f, FastUpdateKind::Global2D, 128);
+
+    ASSERT_TRUE(result.success);
+    std::vector<double> x_gpu = to_double_vector(b);
+    EXPECT_LT(relative_solution_error_l2(x_gpu, system.x_ref), 1e-5);
+    EXPECT_LT(normalized_residual_l2(system.A, system.b, x_gpu, system.n),
+              1e-6);
 }
 
 TEST(GaussSweep, N500)  { run_case(500); }

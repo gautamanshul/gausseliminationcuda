@@ -1,0 +1,2 @@
+matrix,group,source_url,n,nnz,reason
+bcsstk13,HB,https://sparse.tamu.edu/HB/bcsstk13,2003,83883,Deferred from first V10 pilot because the initial goal was a bounded quick-run subset; it is a good next-scale candidate after repeated runs confirm the harness.
