@@ -1,0 +1,4 @@
+timestamp,variant,n,block_size,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,residual_norm2,residual_max,solution_error_norm2,solution_error_max,pivot_ms,row_swap_ms,factor_ms,update_ms,back_sub_ms,pivot_pct,row_swap_pct,factor_pct,update_pct,back_sub_pct,driver_version
+2026-06-21T16:50:38,V3f,256,128,FP32,ordinary_partial_pivoting,8.1476,311.548,0.0359008,2.49321e-08,0.000149633,4.27002e-07,1.12269e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-06-21T16:55:09,V3f,256,128,FP32,ordinary_partial_pivoting,6.2701,220.5,0.0507248,2.49321e-08,0.000149633,4.27002e-07,1.12269e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-06-21T16:59:05,V3f,256,128,FP32,ordinary_partial_pivoting,4.2282,888.881,0.012583,2.49321e-08,0.000149633,4.27002e-07,1.12269e-06,0,0,0,0,0,0,0,0,0,0,12.8

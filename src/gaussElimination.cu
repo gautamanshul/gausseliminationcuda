@@ -421,6 +421,50 @@ __global__ void update_trailing_matrix_v5a_kernel(float* A,
     }
 }
 
+__global__ void update_trailing_matrix_v5b_kernel(float* A,
+                                                   const float* factors,
+                                                   int n, int k,
+                                                   int tile_cols,
+                                                   const int* status) {
+    if (*status != 0) return;
+
+    extern __shared__ float tile_cache[];
+    float* pivot_tile = tile_cache;
+    float* factor_tile = tile_cache + tile_cols;
+
+    int tx = threadIdx.x;
+    int ty = threadIdx.y;
+    int base_col = k + 1 + blockIdx.x * tile_cols;
+    int row = k + 1 + blockIdx.y * blockDim.y + ty;
+    int col0 = base_col + tx;
+    int col1 = base_col + tx + blockDim.x;
+
+    if (ty == 0) {
+        if (tx < tile_cols && col0 < n) {
+            pivot_tile[tx] = A[k * n + col0];
+        }
+        int second = tx + blockDim.x;
+        if (second < tile_cols && col1 < n) {
+            pivot_tile[second] = A[k * n + col1];
+        }
+    }
+    if (tx == 0 && row < n) {
+        factor_tile[ty] = factors[row];
+    }
+    __syncthreads();
+
+    if (row < n) {
+        float factor = factor_tile[ty];
+        if (tx < tile_cols && col0 < n) {
+            A[row * n + col0] -= factor * pivot_tile[tx];
+        }
+        int second = tx + blockDim.x;
+        if (second < tile_cols && col1 < n) {
+            A[row * n + col1] -= factor * pivot_tile[second];
+        }
+    }
+}
+
 __global__ void back_substitution_v1_kernel(float* A, float* b, int n,
                                             float tol, int* status) {
     if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
@@ -1001,7 +1045,8 @@ static GpuSolveTimedResult gauss_gpu_v5a(float* A, float* b, int n, float tol,
 
 enum class FastUpdateKind {
     Global2D,
-    TiledShared
+    TiledShared,
+    TiledSharedUnrolled2
 };
 
 static GpuSolveResult gauss_gpu_fast_custom(float* A, float* b, int n,
@@ -1069,7 +1114,7 @@ static GpuSolveResult gauss_gpu_fast_custom(float* A, float* b, int n,
                     d_A, d_factors, n, k, d_status);
                 cuda_check(cudaGetLastError(),
                            "launch update_trailing_matrix_v3_kernel");
-            } else {
+            } else if (update_kind == FastUpdateKind::TiledShared) {
                 dim3 update_block(tile.cols, tile.rows);
                 dim3 update_grid((rows + update_block.x - 1) / update_block.x,
                                  (rows + update_block.y - 1) / update_block.y);
@@ -1080,6 +1125,18 @@ static GpuSolveResult gauss_gpu_fast_custom(float* A, float* b, int n,
                         d_A, d_factors, n, k, d_status);
                 cuda_check(cudaGetLastError(),
                            "launch update_trailing_matrix_v5a_kernel");
+            } else {
+                int physical_cols = (tile.cols + 1) / 2;
+                dim3 update_block(physical_cols, tile.rows);
+                dim3 update_grid((rows + tile.cols - 1) / tile.cols,
+                                 (rows + update_block.y - 1) / update_block.y);
+                size_t shared_bytes =
+                    static_cast<size_t>(tile.rows + tile.cols) * sizeof(float);
+                update_trailing_matrix_v5b_kernel
+                    <<<update_grid, update_block, shared_bytes>>>(
+                        d_A, d_factors, n, k, tile.cols, d_status);
+                cuda_check(cudaGetLastError(),
+                           "launch update_trailing_matrix_v5b_kernel");
             }
         }
 
@@ -1918,7 +1975,8 @@ void run_ablation_case_fast_custom(int n, int block_size,
     AblationRow row;
     row.timestamp = current_timestamp();
     row.variant = variant;
-    if (update_kind == FastUpdateKind::TiledShared) {
+    if (update_kind == FastUpdateKind::TiledShared ||
+        update_kind == FastUpdateKind::TiledSharedUnrolled2) {
         row.variant += tile_suffix(tile);
     }
     row.n = n;
@@ -2122,6 +2180,10 @@ int run_ablation_cli(int argc, char** argv) {
             run_ablation_case_fast_custom(
                 n, block_size, out_path, "V5af", FastUpdateKind::TiledShared,
                 tile);
+        } else if (variant == "V5bf") {
+            run_ablation_case_fast_custom(
+                n, block_size, out_path, "V5bf",
+                FastUpdateKind::TiledSharedUnrolled2, tile);
         } else if (variant == "VLU") {
             run_ablation_case_vlu(n, block_size, out_path);
         } else if (variant == "V4") {
@@ -2371,7 +2433,8 @@ TEST(GaussFastCorrectness, V3fAndV5afMatchKnownSolution) {
     make_known_solution_system(n, A_original, b_original, x_ref);
 
     for (FastUpdateKind update_kind :
-         {FastUpdateKind::Global2D, FastUpdateKind::TiledShared}) {
+         {FastUpdateKind::Global2D, FastUpdateKind::TiledShared,
+          FastUpdateKind::TiledSharedUnrolled2}) {
         std::vector<float> A = to_float_vector(A_original);
         std::vector<float> b = to_float_vector(b_original);
         GpuSolveResult result =
@@ -2394,19 +2457,23 @@ TEST(GaussFastCorrectness, V5afTunableTileShapesMatchKnownSolution) {
     std::vector<double> x_ref;
     make_known_solution_system(n, A_original, b_original, x_ref);
 
-    for (TileShape tile : {TileShape{8, 8}, TileShape{8, 16},
-                           TileShape{16, 8}, TileShape{16, 16}}) {
-        std::vector<float> A = to_float_vector(A_original);
-        std::vector<float> b = to_float_vector(b_original);
-        GpuSolveResult result =
-            gauss_gpu_fast_custom(A.data(), b.data(), n, 1e-6f,
-                                  FastUpdateKind::TiledShared, 128, tile);
+    for (FastUpdateKind update_kind :
+         {FastUpdateKind::TiledShared, FastUpdateKind::TiledSharedUnrolled2}) {
+        for (TileShape tile : {TileShape{8, 8}, TileShape{8, 16},
+                               TileShape{16, 8}, TileShape{16, 16},
+                               TileShape{32, 32}}) {
+            std::vector<float> A = to_float_vector(A_original);
+            std::vector<float> b = to_float_vector(b_original);
+            GpuSolveResult result =
+                gauss_gpu_fast_custom(A.data(), b.data(), n, 1e-6f,
+                                      update_kind, 128, tile);
 
-        ASSERT_TRUE(result.success);
-        std::vector<double> x_gpu = to_double_vector(b);
-        EXPECT_LT(relative_solution_error_l2(x_gpu, x_ref), 1e-5);
-        EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
-                  1e-6);
+            ASSERT_TRUE(result.success);
+            std::vector<double> x_gpu = to_double_vector(b);
+            EXPECT_LT(relative_solution_error_l2(x_gpu, x_ref), 1e-5);
+            EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
+                      1e-6);
+        }
     }
 }
 

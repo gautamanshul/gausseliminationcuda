@@ -31,6 +31,9 @@ All notable changes to this project are documented here. The format is based on
 - Added uninstrumented fast custom timing variants `V3f` and `V5af` so RQ1
   custom-vs-cuSOLVER comparisons are not inflated by per-phase event
   synchronization overhead.
+- Added `V5bf`, a loop-unrolled tiled follow-up that updates two adjacent
+  columns per thread inside the logical tuned tile. Follow-up results showed no
+  repeatable marginal gain over `V5af_t32x32`.
 - Added `VLU`, a custom LU-decomposition variant that stores implicit `P/L/U`
   factors and solves with forward/back substitution for a closer structural
   comparison with cuSOLVER `getrf/getrs`.

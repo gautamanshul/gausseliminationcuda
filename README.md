@@ -128,12 +128,14 @@ For RQ1 timing against cuSOLVER, use the uninstrumented fast custom variants:
 ```
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V3f --n 500,1000 --block 512 --out results\ablation_fast.csv
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V5af --n 500,1000 --block 512 --tile-rows 32 --tile-cols 32 --out results\ablation_fast.csv
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V5bf --n 500,1000 --block 512 --tile-rows 32 --tile-cols 32 --out results\ablation_fast.csv
 ```
 
-`V3f` and `V5af` use the same update kernels as V3 and V5a, respectively, but
-omit per-phase event synchronization. Use V3/V5a for phase breakdown and
-V3f/V5af for fairer custom-vs-cuSOLVER solve-time comparisons. Tiled rows are
-encoded in the CSV `variant` label, for example `V5af_t32x32`.
+`V3f`, `V5af`, and `V5bf` omit per-phase event synchronization. Use V3/V5a for
+phase breakdown and fast variants for fairer custom-vs-cuSOLVER solve-time
+comparisons. `V5bf` is a loop-unrolled tiled follow-up where each update thread
+handles two adjacent columns inside the logical tile. Tile shapes are encoded in
+the CSV `variant` label, for example `V5af_t32x32` or `V5bf_t32x32`.
 
 `VLU` is a custom LU-decomposition variant that more closely mirrors the
 cuSOLVER `getrf/getrs` structure: it factors `A` into implicit `P/L/U`, stores

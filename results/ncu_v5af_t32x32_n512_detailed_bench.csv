@@ -1,0 +1,2 @@
+timestamp,variant,n,block_size,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,residual_norm2,residual_max,solution_error_norm2,solution_error_max,pivot_ms,row_swap_ms,factor_ms,update_ms,back_sub_ms,pivot_pct,row_swap_pct,factor_pct,update_pct,back_sub_pct,driver_version
+2026-06-21T17:01:44,V5af_t32x32,512,128,FP32,ordinary_partial_pivoting,31.8477,1301.87,0.0687307,2.49285e-08,0.000556704,5.84359e-07,2.07715e-06,0,0,0,0,0,0,0,0,0,0,12.8
