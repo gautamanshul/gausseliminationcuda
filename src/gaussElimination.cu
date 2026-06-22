@@ -1382,6 +1382,28 @@ struct DenseSystem {
     std::vector<double> x_ref;
 };
 
+struct M7Row {
+    std::string timestamp;
+    std::string variant;
+    int n;
+    double kappa;
+    std::string matrix_family;
+    int seed;
+    int run_index;
+    int block_size;
+    std::string tile;
+    std::string precision;
+    std::string pivoting;
+    double cpu_ms;
+    double gpu_ms;
+    double effective_gflops;
+    double residual_norm2;
+    double residual_max;
+    double solution_error_norm2;
+    double solution_error_max;
+    std::string driver_version;
+};
+
 std::string current_timestamp() {
     std::time_t t = std::time(nullptr);
     char buf[32];
@@ -1440,6 +1462,34 @@ void append_ablation_csv(const std::string& path, const AblationRow& r) {
       << r.row_swap_pct << "," << r.factor_pct << "," << r.update_pct << ","
       << r.back_sub_pct << ","
       << r.driver_version << "\n";
+}
+
+void write_m7_csv_header_if_missing(const std::string& path) {
+    std::ifstream check(path);
+    if (check.good()) return;
+
+    std::filesystem::path p(path);
+    if (p.has_parent_path()) {
+        std::filesystem::create_directories(p.parent_path());
+    }
+
+    std::ofstream f(path);
+    f << "timestamp,variant,n,kappa,matrix_family,seed,run_index,block_size,"
+         "tile,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,"
+         "residual_norm2,residual_max,solution_error_norm2,"
+         "solution_error_max,driver_version\n";
+}
+
+void append_m7_csv(const std::string& path, const M7Row& r) {
+    write_m7_csv_header_if_missing(path);
+    std::ofstream f(path, std::ios::app);
+    f << r.timestamp << "," << r.variant << "," << r.n << "," << r.kappa
+      << "," << r.matrix_family << "," << r.seed << "," << r.run_index
+      << "," << r.block_size << "," << r.tile << "," << r.precision << ","
+      << r.pivoting << "," << r.cpu_ms << "," << r.gpu_ms << ","
+      << r.effective_gflops << "," << r.residual_norm2 << ","
+      << r.residual_max << "," << r.solution_error_norm2 << ","
+      << r.solution_error_max << "," << r.driver_version << "\n";
 }
 
 double max_abs_residual(const std::vector<double>& A,
@@ -1545,6 +1595,32 @@ std::vector<int> parse_n_values(const std::string& spec) {
         if (!item.empty()) values.push_back(std::stoi(item));
     }
     return values;
+}
+
+std::vector<double> parse_double_values(const std::string& spec) {
+    std::vector<double> values;
+    std::stringstream ss(spec);
+    std::string item;
+    while (std::getline(ss, item, ',')) {
+        if (!item.empty()) values.push_back(std::stod(item));
+    }
+    return values;
+}
+
+std::string kappa_label(double kappa) {
+    std::ostringstream os;
+    os.setf(std::ios::scientific);
+    os.precision(0);
+    os << kappa;
+    std::string s = os.str();
+    for (char& c : s) {
+        if (c == '+' || c == '.') c = '_';
+    }
+    return s;
+}
+
+std::string tile_string(TileShape tile) {
+    return std::to_string(tile.rows) + "x" + std::to_string(tile.cols);
 }
 
 std::string trim_copy(const std::string& s) {
@@ -1762,6 +1838,53 @@ void make_known_solution_system(int n, std::vector<double>& A,
             b[i] += A[i * n + j] * x_ref[j];
         }
     }
+}
+
+void apply_symmetric_givens(std::vector<double>& A, int n, int p, int q,
+                            double c, double s) {
+    if (p == q) return;
+    for (int col = 0; col < n; col++) {
+        double ap = A[p * n + col];
+        double aq = A[q * n + col];
+        A[p * n + col] = c * ap - s * aq;
+        A[q * n + col] = s * ap + c * aq;
+    }
+    for (int row = 0; row < n; row++) {
+        double ap = A[row * n + p];
+        double aq = A[row * n + q];
+        A[row * n + p] = c * ap - s * aq;
+        A[row * n + q] = s * ap + c * aq;
+    }
+}
+
+DenseSystem make_conditioned_spd_system(int n, double kappa, int seed) {
+    if (n <= 0) throw std::runtime_error("M7 n must be positive");
+    if (kappa < 1.0) throw std::runtime_error("M7 kappa must be >= 1");
+
+    std::vector<double> A(static_cast<size_t>(n) * n, 0.0);
+    double log_min = -std::log(kappa);
+    for (int i = 0; i < n; i++) {
+        double t = (n == 1) ? 0.0 : static_cast<double>(i) / (n - 1);
+        A[i * n + i] = std::exp(log_min * t);
+    }
+
+    std::mt19937 rng(seed);
+    std::uniform_real_distribution<double> angle_dist(-0.45, 0.45);
+    int passes = std::min(8, std::max(2, n / 64 + 2));
+    for (int pass = 0; pass < passes; pass++) {
+        int stride = 1 + ((pass * 17 + 3) % std::max(1, n - 1));
+        for (int i = 0; i < n; i++) {
+            int j = (i + stride) % n;
+            if (i == j) continue;
+            double angle = angle_dist(rng);
+            apply_symmetric_givens(A, n, i, j, std::cos(angle),
+                                   std::sin(angle));
+        }
+    }
+
+    DenseSystem system = make_dense_system_from_matrix(
+        std::move(A), n, "m7_spd_k" + kappa_label(kappa));
+    return system;
 }
 
 void run_ablation_case(int n, int block_size, const std::string& out_path) {
@@ -2452,18 +2575,153 @@ void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
     }
 }
 
+void append_m7_row(const std::string& out_path,
+                   const DenseSystem& system,
+                   const std::string& variant_label,
+                   double kappa,
+                   int seed,
+                   int run_index,
+                   int block_size,
+                   TileShape tile,
+                   const std::string& precision,
+                   const std::string& pivoting,
+                   double cpu_ms,
+                   double gpu_ms,
+                   const std::vector<double>& x_gpu) {
+    M7Row row;
+    row.timestamp = current_timestamp();
+    row.variant = variant_label;
+    row.n = system.n;
+    row.kappa = kappa;
+    row.matrix_family = "conditioned_spd_givens";
+    row.seed = seed;
+    row.run_index = run_index;
+    row.block_size = block_size;
+    row.tile = tile_string(tile);
+    row.precision = precision;
+    row.pivoting = pivoting;
+    row.cpu_ms = cpu_ms;
+    row.gpu_ms = gpu_ms;
+    row.effective_gflops = effective_lu_gflops(system.n, gpu_ms);
+    row.residual_norm2 =
+        normalized_residual_l2(system.A, system.b, x_gpu, system.n);
+    row.residual_max = max_abs_residual(system.A, system.b, x_gpu, system.n);
+    row.solution_error_norm2 =
+        relative_solution_error_l2(x_gpu, system.x_ref);
+    row.solution_error_max = max_abs_solution_error(x_gpu, system.x_ref);
+    row.driver_version = driver_version_string();
+    append_m7_csv(out_path, row);
+
+    std::cout << "  variant=" << row.variant
+              << "  n=" << row.n
+              << "  kappa=" << row.kappa
+              << "  run=" << row.run_index
+              << "  GPU=" << row.gpu_ms << " ms"
+              << "  residual_l2=" << row.residual_norm2
+              << "  solution_error_l2=" << row.solution_error_norm2 << "\n";
+}
+
+void run_m7_synthetic_case(const DenseSystem& system,
+                           int block_size,
+                           const std::string& out_path,
+                           const std::string& variant,
+                           double kappa,
+                           int seed,
+                           int run_index,
+                           TileShape tile = {}) {
+    const float tol = 1e-6f;
+    std::vector<float> A_cpu = to_float_vector(system.A);
+    std::vector<float> b_cpu = to_float_vector(system.b);
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), system.n, tol);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    double cpu_ms =
+        std::chrono::duration<double, std::milli>(t1 - t0).count();
+    if (x_cpu.empty()) {
+        throw std::runtime_error("M7 CPU reference reported singular matrix");
+    }
+
+    if (variant == "V3f") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_fast_custom(
+            A_gpu.data(), b_gpu.data(), system.n, tol, FastUpdateKind::Global2D,
+            block_size, tile);
+        if (!gpu.success) throw std::runtime_error("M7 V3f GPU failed");
+        append_m7_row(out_path, system, "V3f", kappa, seed, run_index,
+                      block_size, tile, "FP32", "ordinary_partial_pivoting",
+                      cpu_ms, gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V4") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu =
+            gauss_gpu_v4_cusolver(A_gpu.data(), b_gpu.data(), system.n);
+        if (!gpu.success) throw std::runtime_error("M7 V4 cuSOLVER failed");
+        append_m7_row(out_path, system, "V4", kappa, seed, run_index,
+                      block_size, tile, "FP32",
+                      "ordinary_partial_pivoting_cusolver_getrf", cpu_ms,
+                      gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V5af") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_fast_custom(
+            A_gpu.data(), b_gpu.data(), system.n, tol,
+            FastUpdateKind::TiledShared, block_size, tile);
+        if (!gpu.success) throw std::runtime_error("M7 V5af GPU failed");
+        append_m7_row(out_path, system, "V5af" + tile_suffix(tile), kappa,
+                      seed, run_index, block_size, tile, "FP32",
+                      "ordinary_partial_pivoting", cpu_ms, gpu.elapsed_ms,
+                      to_double_vector(b_gpu));
+    } else if (variant == "V5bf") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_fast_custom(
+            A_gpu.data(), b_gpu.data(), system.n, tol,
+            FastUpdateKind::TiledSharedUnrolled2, block_size, tile);
+        if (!gpu.success) throw std::runtime_error("M7 V5bf GPU failed");
+        append_m7_row(out_path, system, "V5bf" + tile_suffix(tile), kappa,
+                      seed, run_index, block_size, tile, "FP32",
+                      "ordinary_partial_pivoting", cpu_ms, gpu.elapsed_ms,
+                      to_double_vector(b_gpu));
+    } else if (variant == "VLU") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu =
+            gauss_gpu_lu_custom(A_gpu.data(), b_gpu.data(), system.n, tol,
+                                block_size);
+        if (!gpu.success) throw std::runtime_error("M7 VLU GPU failed");
+        append_m7_row(out_path, system, "VLU", kappa, seed, run_index,
+                      block_size, tile, "FP32",
+                      "ordinary_partial_pivoting_custom_lu", cpu_ms,
+                      gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else {
+        throw std::runtime_error("unsupported M7 variant: " + variant);
+    }
+}
+
 int run_ablation_cli(int argc, char** argv) {
     std::vector<int> n_values{500, 1000};
+    std::vector<double> kappa_values{1.0e2};
     int block_size = 512;
+    int base_seed = 42;
+    int repeats = 1;
     std::string out_path = "results/ablation_pilot.csv";
     std::string variant = "V1";
     std::string real_matrix_path;
     std::string matrix_name;
+    bool m7_synthetic = false;
     TileShape tile;
 
     for (int i = 2; i < argc; i++) {
         if (std::strcmp(argv[i], "--n") == 0 && i + 1 < argc) {
             n_values = parse_n_values(argv[++i]);
+        } else if (std::strcmp(argv[i], "--kappa") == 0 && i + 1 < argc) {
+            kappa_values = parse_double_values(argv[++i]);
+        } else if (std::strcmp(argv[i], "--seed") == 0 && i + 1 < argc) {
+            base_seed = std::stoi(argv[++i]);
+        } else if (std::strcmp(argv[i], "--repeats") == 0 && i + 1 < argc) {
+            repeats = std::stoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--block") == 0 && i + 1 < argc) {
             block_size = std::stoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--tile-rows") == 0 && i + 1 < argc) {
@@ -2478,6 +2736,8 @@ int run_ablation_cli(int argc, char** argv) {
             real_matrix_path = argv[++i];
         } else if (std::strcmp(argv[i], "--matrix-name") == 0 && i + 1 < argc) {
             matrix_name = argv[++i];
+        } else if (std::strcmp(argv[i], "--m7-synthetic") == 0) {
+            m7_synthetic = true;
         } else {
             std::cerr << "Unknown ablation argument: " << argv[i] << "\n";
             return 2;
@@ -2488,6 +2748,25 @@ int run_ablation_cli(int argc, char** argv) {
               << "  output=" << out_path << "\n"
               << "  variant=" << variant << "\n"
               << "  tile=" << tile.rows << "x" << tile.cols << "\n";
+    if (m7_synthetic) {
+        std::cout << "  mode=M7 synthetic"
+                  << "  repeats=" << repeats
+                  << "  seed=" << base_seed << "\n";
+        for (int n : n_values) {
+            for (double kappa : kappa_values) {
+                for (int run_index = 0; run_index < repeats; run_index++) {
+                    int seed = base_seed + 1000003 * run_index + 9973 * n +
+                               static_cast<int>(std::round(std::log10(kappa))) *
+                                   101;
+                    DenseSystem system =
+                        make_conditioned_spd_system(n, kappa, seed);
+                    run_m7_synthetic_case(system, block_size, out_path, variant,
+                                          kappa, seed, run_index, tile);
+                }
+            }
+        }
+        return 0;
+    }
     if (!real_matrix_path.empty()) {
         DenseSystem system = load_real_matrix_system(real_matrix_path,
                                                      matrix_name);
@@ -2849,6 +3128,25 @@ TEST(GaussV10RealMatrix, LoadsMatrixMarketAndSolvesWithV3f) {
     EXPECT_LT(relative_solution_error_l2(x_gpu, system.x_ref), 1e-5);
     EXPECT_LT(normalized_residual_l2(system.A, system.b, x_gpu, system.n),
               1e-6);
+}
+
+TEST(GaussM7Synthetic, ConditionedSpdSystemSolvesWithV3f) {
+    DenseSystem system = make_conditioned_spd_system(8, 1.0e4, 1234);
+
+    ASSERT_EQ(system.n, 8);
+    ASSERT_EQ(system.A.size(), 64u);
+    ASSERT_EQ(system.b.size(), 8u);
+    ASSERT_EQ(system.x_ref.size(), 8u);
+
+    std::vector<float> A = to_float_vector(system.A);
+    std::vector<float> b = to_float_vector(system.b);
+    GpuSolveResult result = gauss_gpu_fast_custom(
+        A.data(), b.data(), system.n, 1e-6f, FastUpdateKind::Global2D, 128);
+
+    ASSERT_TRUE(result.success);
+    std::vector<double> x_gpu = to_double_vector(b);
+    EXPECT_LT(normalized_residual_l2(system.A, system.b, x_gpu, system.n),
+              1e-5);
 }
 
 TEST(GaussSweep, N500)  { run_case(500); }

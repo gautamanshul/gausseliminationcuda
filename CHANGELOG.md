@@ -32,6 +32,9 @@ All notable changes to this project are documented here. The format is based on
   Matrix Market/dense text loading, deterministic `b = A * x_ref` generation,
   a small `toy5.mtx` smoke-test matrix, and real-matrix CSV labels such as
   `V10_toy5_V3f`.
+- Added M7 condition-controlled synthetic sweep support via `--m7-synthetic`,
+  including `--kappa`, `--seed`, and `--repeats` options plus an extended CSV
+  schema for `kappa`, matrix family, seed, and run index.
 - Added uninstrumented fast custom timing variants `V3f` and `V5af` so RQ1
   custom-vs-cuSOLVER comparisons are not inflated by per-phase event
   synchronization overhead.

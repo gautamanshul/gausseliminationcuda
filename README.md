@@ -165,6 +165,26 @@ variant label, for example `V10_toy5_V3f` or `V10_toy5_V5af_t32x32`. For
 dissertation evidence, replace the toy file with a small cited SuiteSparse
 subset that fits GTX 1650 memory and record skipped matrices separately.
 
+### M7 Full Synthetic Sweep
+
+`M7` adds a condition-controlled synthetic sweep mode. It uses a deterministic
+SPD matrix family: a geometric spectrum with target `kappa`, followed by
+orthogonal Givens mixing so the matrix becomes dense while preserving the
+intended condition-number scale. This is the synthetic counterpart to the V10
+real-matrix supplement.
+
+Small validation sweep:
+
+```powershell
+out\build\x64-Release\gauss_elim_bench.exe --ablation --m7-synthetic --variant V3f --n 256,512 --kappa 1e2,1e4,1e6 --repeats 3 --seed 42 --out results\m7_synthetic_validation.csv
+out\build\x64-Release\gauss_elim_bench.exe --ablation --m7-synthetic --variant V4 --n 256,512 --kappa 1e2,1e4,1e6 --repeats 3 --seed 42 --out results\m7_synthetic_validation.csv
+out\build\x64-Release\gauss_elim_bench.exe --ablation --m7-synthetic --variant V5af --tile-rows 32 --tile-cols 32 --n 256,512 --kappa 1e2,1e4,1e6 --repeats 3 --seed 42 --out results\m7_synthetic_validation.csv
+```
+
+M7 writes an extended CSV schema containing `kappa`, `matrix_family`, `seed`,
+and `run_index`. Scale the grid toward `n=4000` or `n=8000` only after the
+validation sweep confirms memory and runtime are acceptable.
+
 The historical corrected FP64 scaled-pivot solver can still be run for pilot
 comparison with:
 
