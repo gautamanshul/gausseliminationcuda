@@ -178,7 +178,9 @@ out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V6b --panel-widt
 pivot validity checking, RHS swap, and matrix row swap into one per-pivot
 kernel. This reduces panel launch count further, but the row swap is performed
 by one cooperative block looping over columns, so it is a size-dependent
-tradeoff rather than an assumed win:
+tradeoff rather than an assumed win. The five-repeat V6 confirmation sweep
+showed `V6c_b64` as the fastest V6-family variant at `n=2000`, `n=4000`, and
+`n=6000`, while `V4`/cuSOLVER remained substantially faster overall:
 
 ```powershell
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V6c --panel-width 64 --n 500,1000 --block 512 --out results\ablation_v6c.csv
