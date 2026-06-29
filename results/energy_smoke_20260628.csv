@@ -1,0 +1,3 @@
+"timestamp","requested_variant","csv_variant","n","run_index","sample_ms","sample_count","process_wall_ms","gpu_ms","effective_gflops","energy_j","avg_power_w","max_power_w","joules_per_effective_gflop","avg_temp_c","max_temp_c","avg_gpu_util_pct","max_gpu_util_pct","avg_mem_util_pct","avg_graphics_clock_mhz","avg_memory_clock_mhz","residual_norm2","solution_error_norm2"
+"2026-06-28T22:53:12","V4","V4","1000","0","50","3","857.058","30.3182","21.989","7.68645","8.968416","11.67","11.529672","56","56","2","3","0","1020","3401","1.39404E-08","4.55335E-07"
+"2026-06-28T22:53:13","V6b","V6b_b64","1000","0","50","4","825.781","91.9605","7.24949","8.224004","9.959063","12.37","12.336005","56.25","57","2.5","4","0","1020","3401","3.95054E-09","1.28551E-07"

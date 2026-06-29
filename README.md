@@ -234,6 +234,27 @@ long run identifies its current phase before a result row is emitted. Use a
 new output CSV after this schema extension rather than appending to an older
 M7 CSV.
 
+### Energy-to-Solution Pilot
+
+The `scripts\measure_energy.ps1` wrapper samples NVIDIA GPU power with
+`nvidia-smi` while each benchmark process runs, then joins the integrated energy
+estimate with the ablation CSV row. It reports approximate energy-to-solution
+metrics such as `energy_j`, `avg_power_w`, `max_power_w`, and
+`joules_per_effective_gflop`.
+
+```powershell
+.\scripts\measure_energy.ps1 `
+  -Variants V4,V6a,V6b,V3f,V5af `
+  -Sizes 4000,6000 `
+  -Repeats 3 `
+  -SampleMs 50 `
+  -OutPath results\energy_pilot.csv
+```
+
+Power sampling is approximate, especially for very short runs such as cuSOLVER
+at smaller matrix sizes. Treat the energy columns as pilot evidence unless the
+run duration is long enough to collect multiple samples.
+
 The historical corrected FP64 scaled-pivot solver can still be run for pilot
 comparison with:
 

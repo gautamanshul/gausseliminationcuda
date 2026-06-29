@@ -45,6 +45,9 @@ All notable changes to this project are documented here. The format is based on
 - Added `--cpu-reference-max-n` for standard ablation sweeps so larger
   generated known-solution comparisons can skip repeated CPU V1 solves while
   retaining residual and solution-error validation.
+- Added `scripts\measure_energy.ps1`, an `nvidia-smi`-based wrapper that
+  samples GPU power during ablation runs and reports approximate energy,
+  average/max power, and joules per effective GFLOP.
 - Added uninstrumented fast custom timing variants `V3f` and `V5af` so RQ1
   custom-vs-cuSOLVER comparisons are not inflated by per-phase event
   synchronization overhead.
