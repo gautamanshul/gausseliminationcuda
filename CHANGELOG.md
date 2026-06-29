@@ -35,6 +35,16 @@ All notable changes to this project are documented here. The format is based on
 - Added M7 condition-controlled synthetic sweep support via `--m7-synthetic`,
   including `--kappa`, `--seed`, and `--repeats` options plus an extended CSV
   schema for `kappa`, matrix family, seed, and run index.
+- Added M7 wall-clock phase instrumentation and flushed `M7_PHASE` progress
+  records. V4 now separates transpose, allocation/setup, host/device copies,
+  workspace setup, `getrf/getrs` wall time, and cleanup while preserving
+  CUDA-event `gpu_ms` as the solve timing metric.
+- Added `--m7-cpu-reference-max-n` with a default of 2048. Larger synthetic
+  cases skip the redundant cubic CPU solve and validate against the generated
+  `x_ref`, recording `cpu_reference_ran=0` and `cpu_ms=-1`.
+- Added `--cpu-reference-max-n` for standard ablation sweeps so larger
+  generated known-solution comparisons can skip repeated CPU V1 solves while
+  retaining residual and solution-error validation.
 - Added uninstrumented fast custom timing variants `V3f` and `V5af` so RQ1
   custom-vs-cuSOLVER comparisons are not inflated by per-phase event
   synchronization overhead.
@@ -44,6 +54,17 @@ All notable changes to this project are documented here. The format is based on
 - Added `VLU`, a custom LU-decomposition variant that stores implicit `P/L/U`
   factors and solves with forward/back substitution for a closer structural
   comparison with cuSOLVER `getrf/getrs`.
+- Added `V6a`, an FP32 hybrid blocked-LU variant with custom CUDA panel
+  pivoting/factorization and final solve, plus cuBLAS `STRSM` and `SGEMM` block
+  updates. The new `--panel-width` option supports panel-size ablation and is
+  available in standard, M7 synthetic, and V10 real-matrix modes.
+- Added `V6b`, a V6a follow-up that fuses pivot checking, RHS swapping, and
+  matrix row swapping into one per-pivot kernel launch to test whether reducing
+  panel launch overhead improves the hybrid blocked-LU design.
+- Added V6a correctness coverage across multiple panel widths, including a
+  matrix size that leaves a partial final panel.
+- Added an RQ1 cross-variant pilot report comparing `V6a_b64` with `V3f`,
+  `V5af_t32x32`, `VLU`, and cuSOLVER `V4`.
 
 ### Fixed
 - Replaced the monolithic elimination kernel's block-local `__syncthreads()`

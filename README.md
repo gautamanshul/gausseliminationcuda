@@ -137,12 +137,41 @@ comparisons. `V5bf` is a loop-unrolled tiled follow-up where each update thread
 handles two adjacent columns inside the logical tile. Tile shapes are encoded in
 the CSV `variant` label, for example `V5af_t32x32` or `V5bf_t32x32`.
 
+For larger standard-ablation sweeps, `--cpu-reference-max-n` limits when the
+slow CPU V1 reference is run. Rows above the threshold record `cpu_ms=-1` while
+still validating the GPU result against the generated known solution through the
+residual and solution-error columns.
+
 `VLU` is a custom LU-decomposition variant that more closely mirrors the
 cuSOLVER `getrf/getrs` structure: it factors `A` into implicit `P/L/U`, stores
 the pivot vector, then solves with forward/back substitution.
 
 ```
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant VLU --n 500,1000 --block 512 --out results\ablation_lu.csv
+```
+
+`V6a` is a hybrid right-looking blocked LU experiment. Custom CUDA kernels
+perform partial-pivot selection, row swaps, panel factorization, and the final
+triangular solve. cuBLAS performs the block operations that dominate larger
+problems: `STRSM` computes the block row and `SGEMM` updates the trailing
+submatrix. Use `--panel-width` to tune the algorithmic block size; the default
+is 64 and the value is encoded in labels such as `V6a_b64`.
+
+```powershell
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V6a --panel-width 64 --n 500,1000 --block 512 --out results\ablation_v6a.csv
+```
+
+V6a is not a new elimination method. It is an experimental implementation that
+tests whether reorganizing the same partial-pivoted LU computation around
+Level-3 BLAS operations transfers effectively to a consumer NVIDIA GPU.
+
+`V6b` keeps the same blocked-LU/cuBLAS structure as V6a, but fuses pivot
+validity checking, RHS swapping, and matrix row swapping into one kernel launch
+per pivot. This variant isolates whether reducing panel launch overhead improves
+the hybrid blocked design:
+
+```powershell
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V6b --panel-width 64 --n 500,1000 --block 512 --out results\ablation_v6b.csv
 ```
 
 ### V10 Real-Matrix Supplement
@@ -158,6 +187,7 @@ right-hand side.
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V3f --real-matrix data\real_matrices\toy5.mtx --matrix-name toy5 --out results\v10_real_matrix_smoke.csv
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V4 --real-matrix data\real_matrices\toy5.mtx --matrix-name toy5 --out results\v10_real_matrix_smoke.csv
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V5af --tile-rows 32 --tile-cols 32 --real-matrix data\real_matrices\toy5.mtx --matrix-name toy5 --out results\v10_real_matrix_smoke.csv
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V6a --panel-width 64 --real-matrix data\real_matrices\toy5.mtx --matrix-name toy5 --out results\v10_real_matrix_smoke.csv
 ```
 
 V10 rows use the normal ablation CSV schema and encode the matrix identity in the
@@ -179,11 +209,30 @@ Small validation sweep:
 out\build\x64-Release\gauss_elim_bench.exe --ablation --m7-synthetic --variant V3f --n 256,512 --kappa 1e2,1e4,1e6 --repeats 3 --seed 42 --out results\m7_synthetic_validation.csv
 out\build\x64-Release\gauss_elim_bench.exe --ablation --m7-synthetic --variant V4 --n 256,512 --kappa 1e2,1e4,1e6 --repeats 3 --seed 42 --out results\m7_synthetic_validation.csv
 out\build\x64-Release\gauss_elim_bench.exe --ablation --m7-synthetic --variant V5af --tile-rows 32 --tile-cols 32 --n 256,512 --kappa 1e2,1e4,1e6 --repeats 3 --seed 42 --out results\m7_synthetic_validation.csv
+out\build\x64-Release\gauss_elim_bench.exe --ablation --m7-synthetic --variant V6a --panel-width 64 --n 256,512 --kappa 1e2,1e4,1e6 --repeats 3 --seed 42 --out results\m7_synthetic_validation.csv
 ```
 
 M7 writes an extended CSV schema containing `kappa`, `matrix_family`, `seed`,
-and `run_index`. Scale the grid toward `n=4000` or `n=8000` only after the
-validation sweep confirms memory and runtime are acceptable.
+and `run_index`. It also records wall-clock phases for matrix generation,
+input preparation, the optional CPU reference, the complete GPU wrapper,
+validation, and the pre-CSV total. For `V4`, additional columns separate the
+row-major-to-column-major transpose, setup/allocation, host-to-device copy,
+workspace setup, `getrf/getrs` wall time, device-to-host copy, and cleanup.
+The existing `gpu_ms` column remains CUDA-event time for the solve itself.
+
+M7 uses the known generated `x_ref`, residual, and solution error for
+correctness at every size. The cubic CPU reference solve runs by default only
+through `n=2048`; larger cases record `cpu_reference_ran=0` and `cpu_ms=-1`.
+Override the threshold when needed:
+
+```powershell
+out\build\x64-Release\gauss_elim_bench.exe --ablation --m7-synthetic --variant V4 --n 8000 --kappa 1e4 --repeats 1 --m7-cpu-reference-max-n 0 --out results\m7_n8000_smoke.csv
+```
+
+Progress markers are flushed to standard error as `M7_PHASE` records so a
+long run identifies its current phase before a result row is emitted. Use a
+new output CSV after this schema extension rather than appending to an older
+M7 CSV.
 
 The historical corrected FP64 scaled-pivot solver can still be run for pilot
 comparison with:

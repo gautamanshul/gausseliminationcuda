@@ -33,7 +33,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(gauss_elim_bench src/gaussElimination.cu)
-target_link_libraries(gauss_elim_bench PRIVATE GTest::gtest cusolver)
+target_link_libraries(gauss_elim_bench PRIVATE GTest::gtest cusolver cublas)
 
 set(GAUSS_CUDA_COMPILE_OPTIONS --expt-relaxed-constexpr)
 if(CMAKE_VERSION VERSION_LESS 3.18)

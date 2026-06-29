@@ -25,6 +25,7 @@ void __syncthreads();
 #endif
 
 #include <cuda_runtime.h>
+#include <cublas_v2.h>
 #include <cusolverDn.h>
 #include <device_launch_parameters.h>
 
@@ -486,7 +487,7 @@ __global__ void back_substitution_v1_kernel(float* A, float* b, int n,
 }
 
 __global__ void lu_solve_kernel(const float* LU, float* b, const int* pivots,
-                                int n, float tol, int* status) {
+                                 int n, float tol, int* status) {
     if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
 
     for (int k = 0; k < n - 1; k++) {
@@ -526,10 +527,172 @@ __global__ void lu_solve_kernel(const float* LU, float* b, const int* pivots,
 // Host wrapper: parallel scaling and host-orchestrated per-pivot elimination.
 // Returns the GPU elapsed milliseconds (kernel time only, not allocs).
 // ----------------------------------------------------------------------------
+struct GpuHostPhaseTimes {
+    double transpose_ms = 0.0;
+    double setup_alloc_ms = 0.0;
+    double h2d_ms = 0.0;
+    double workspace_ms = 0.0;
+    double solve_wall_ms = 0.0;
+    double d2h_ms = 0.0;
+    double cleanup_ms = 0.0;
+};
+
 struct GpuSolveResult {
     double elapsed_ms;
     bool success;
+    GpuHostPhaseTimes host_phases;
 };
+
+using WallClock = std::chrono::steady_clock;
+
+static double wall_elapsed_ms(WallClock::time_point start) {
+    return std::chrono::duration<double, std::milli>(WallClock::now() - start)
+        .count();
+}
+
+__global__ void find_pivot_col_major_v6_kernel(
+    const float* A, int n, int k, int* pivot, float* pivot_abs,
+    const int* status) {
+    if (*status != 0) return;
+
+    __shared__ float values[256];
+    __shared__ int rows[256];
+    int tid = threadIdx.x;
+    float best_value = -1.0f;
+    int best_row = k;
+    for (int row = k + tid; row < n; row += blockDim.x) {
+        float candidate = fabsf(A[k * n + row]);
+        if (candidate > best_value ||
+            (candidate == best_value && row < best_row)) {
+            best_value = candidate;
+            best_row = row;
+        }
+    }
+    values[tid] = best_value;
+    rows[tid] = best_row;
+    __syncthreads();
+
+    for (int offset = blockDim.x / 2; offset > 0; offset /= 2) {
+        if (tid < offset) {
+            float other_value = values[tid + offset];
+            int other_row = rows[tid + offset];
+            if (other_value > values[tid] ||
+                (other_value == values[tid] && other_row < rows[tid])) {
+                values[tid] = other_value;
+                rows[tid] = other_row;
+            }
+        }
+        __syncthreads();
+    }
+
+    if (tid == 0) {
+        *pivot = rows[0];
+        *pivot_abs = values[0];
+    }
+}
+
+__global__ void check_pivot_and_swap_rhs_v6_kernel(
+    float* b, int k, float tol, const int* pivot, const float* pivot_abs,
+    int* status) {
+    if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
+    if (*pivot_abs <= tol) {
+        *status = 1;
+        return;
+    }
+    int p = *pivot;
+    if (p != k) {
+        float tmp = b[p];
+        b[p] = b[k];
+        b[k] = tmp;
+    }
+}
+
+__global__ void swap_rows_col_major_v6_kernel(
+    float* A, int n, int k, const int* pivot, const int* status) {
+    if (*status != 0) return;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (col >= n) return;
+    int p = *pivot;
+    if (p != k) {
+        float tmp = A[col * n + p];
+        A[col * n + p] = A[col * n + k];
+        A[col * n + k] = tmp;
+    }
+}
+
+__global__ void check_pivot_swap_rhs_and_rows_col_major_v6b_kernel(
+    float* A, float* b, int n, int k, float tol, const int* pivot,
+    const float* pivot_abs, int* status) {
+    if (*status != 0) return;
+    if (*pivot_abs <= tol) {
+        if (blockIdx.x == 0 && threadIdx.x == 0) {
+            *status = 1;
+        }
+        return;
+    }
+
+    int p = *pivot;
+    if (p == k) return;
+
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (col < n) {
+        float tmp = A[col * n + p];
+        A[col * n + p] = A[col * n + k];
+        A[col * n + k] = tmp;
+    }
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
+        float tmp = b[p];
+        b[p] = b[k];
+        b[k] = tmp;
+    }
+}
+
+__global__ void compute_panel_multipliers_v6_kernel(
+    float* A, int n, int k, const int* status) {
+    if (*status != 0) return;
+    int row = k + 1 + blockIdx.x * blockDim.x + threadIdx.x;
+    if (row < n) {
+        A[k * n + row] /= A[k * n + k];
+    }
+}
+
+__global__ void update_panel_v6_kernel(float* A, int n, int k,
+                                        int panel_end,
+                                        const int* status) {
+    if (*status != 0) return;
+    int col = k + 1 + blockIdx.x * blockDim.x + threadIdx.x;
+    int row = k + 1 + blockIdx.y * blockDim.y + threadIdx.y;
+    if (col < panel_end && row < n) {
+        A[col * n + row] -= A[k * n + row] * A[col * n + k];
+    }
+}
+
+__global__ void solve_lu_col_major_v6_kernel(const float* LU, float* b,
+                                              int n, float tol,
+                                              int* status) {
+    if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
+
+    for (int i = 0; i < n; i++) {
+        float sum = 0.0f;
+        for (int j = 0; j < i; j++) {
+            sum += LU[j * n + i] * b[j];
+        }
+        b[i] -= sum;
+    }
+
+    for (int i = n - 1; i >= 0; i--) {
+        float diag = LU[i * n + i];
+        if (fabsf(diag) <= tol) {
+            *status = 1;
+            return;
+        }
+        float sum = 0.0f;
+        for (int j = i + 1; j < n; j++) {
+            sum += LU[j * n + i] * b[j];
+        }
+        b[i] = (b[i] - sum) / diag;
+    }
+}
 
 struct GpuPhaseTimes {
     double pivot_ms = 0.0;
@@ -564,6 +727,10 @@ static std::string tile_suffix(TileShape tile) {
     return "_t" + std::to_string(tile.rows) + "x" + std::to_string(tile.cols);
 }
 
+static std::string panel_suffix(int panel_width) {
+    return "_b" + std::to_string(panel_width);
+}
+
 static void cuda_check(cudaError_t result, const char* operation) {
     if (result != cudaSuccess) {
         throw std::runtime_error(std::string(operation) + ": " +
@@ -575,6 +742,13 @@ static void cusolver_check(cusolverStatus_t result, const char* operation) {
     if (result != CUSOLVER_STATUS_SUCCESS) {
         throw std::runtime_error(std::string(operation) +
                                  ": cuSOLVER status " +
+                                 std::to_string(static_cast<int>(result)));
+    }
+}
+
+static void cublas_check(cublasStatus_t result, const char* operation) {
+    if (result != CUBLAS_STATUS_SUCCESS) {
+        throw std::runtime_error(std::string(operation) + ": cuBLAS status " +
                                  std::to_string(static_cast<int>(result)));
     }
 }
@@ -1167,8 +1341,8 @@ static GpuSolveResult gauss_gpu_fast_custom(float* A, float* b, int n,
 }
 
 static GpuSolveResult gauss_gpu_lu_custom(float* A, float* b, int n,
-                                          float tol,
-                                          int block_size = 256) {
+                                           float tol,
+                                           int block_size = 256) {
     float *d_A = nullptr, *d_b = nullptr, *d_factors = nullptr;
     float* d_pivot_abs = nullptr;
     int *d_status = nullptr, *d_pivot = nullptr, *d_pivots = nullptr;
@@ -1257,8 +1431,205 @@ static GpuSolveResult gauss_gpu_lu_custom(float* A, float* b, int n,
     }
 }
 
+static GpuSolveResult gauss_gpu_v6a_blocked(const float* A_row_major,
+                                             float* b, int n, float tol,
+                                             int panel_width,
+                                             int block_size = 256,
+                                             bool fuse_row_swap = false) {
+    if (panel_width <= 0) {
+        throw std::invalid_argument("V6a panel width must be positive");
+    }
+    if (block_size <= 0 || block_size > 1024) {
+        throw std::invalid_argument("V6a block size must be in [1, 1024]");
+    }
+
+    cublasHandle_t handle = nullptr;
+    float *d_A = nullptr, *d_b = nullptr, *d_pivot_abs = nullptr;
+    int *d_pivot = nullptr, *d_status = nullptr;
+    cudaEvent_t e0 = nullptr, e1 = nullptr;
+
+    auto cleanup = [&]() {
+        if (e0) cudaEventDestroy(e0);
+        if (e1) cudaEventDestroy(e1);
+        if (d_A) cudaFree(d_A);
+        if (d_b) cudaFree(d_b);
+        if (d_pivot_abs) cudaFree(d_pivot_abs);
+        if (d_pivot) cudaFree(d_pivot);
+        if (d_status) cudaFree(d_status);
+        if (handle) cublasDestroy(handle);
+    };
+
+    try {
+        GpuHostPhaseTimes host_phases;
+
+        auto phase_start = WallClock::now();
+        std::vector<float> A_col_major(static_cast<size_t>(n) * n);
+        for (int row = 0; row < n; row++) {
+            for (int col = 0; col < n; col++) {
+                A_col_major[static_cast<size_t>(col) * n + row] =
+                    A_row_major[static_cast<size_t>(row) * n + col];
+            }
+        }
+        host_phases.transpose_ms = wall_elapsed_ms(phase_start);
+
+        phase_start = WallClock::now();
+        cublas_check(cublasCreate(&handle), "cublasCreate");
+        cuda_check(cudaMalloc(&d_A, static_cast<size_t>(n) * n * sizeof(float)),
+                   "V6a cudaMalloc(A)");
+        cuda_check(cudaMalloc(&d_b, static_cast<size_t>(n) * sizeof(float)),
+                   "V6a cudaMalloc(b)");
+        cuda_check(cudaMalloc(&d_pivot_abs, sizeof(float)),
+                   "V6a cudaMalloc(pivot_abs)");
+        cuda_check(cudaMalloc(&d_pivot, sizeof(int)),
+                   "V6a cudaMalloc(pivot)");
+        cuda_check(cudaMalloc(&d_status, sizeof(int)),
+                   "V6a cudaMalloc(status)");
+        cuda_check(cudaMemset(d_status, 0, sizeof(int)),
+                   "V6a cudaMemset(status)");
+        host_phases.setup_alloc_ms = wall_elapsed_ms(phase_start);
+
+        phase_start = WallClock::now();
+        cuda_check(cudaMemcpy(d_A, A_col_major.data(),
+                              static_cast<size_t>(n) * n * sizeof(float),
+                              cudaMemcpyHostToDevice),
+                   "V6a copy A to device");
+        cuda_check(cudaMemcpy(d_b, b, static_cast<size_t>(n) * sizeof(float),
+                              cudaMemcpyHostToDevice),
+                   "V6a copy b to device");
+        host_phases.h2d_ms = wall_elapsed_ms(phase_start);
+
+        cuda_check(cudaEventCreate(&e0), "V6a cudaEventCreate(start)");
+        cuda_check(cudaEventCreate(&e1), "V6a cudaEventCreate(stop)");
+        cuda_check(cudaEventRecord(e0), "V6a cudaEventRecord(start)");
+        phase_start = WallClock::now();
+
+        constexpr int pivot_threads = 256;
+        dim3 panel_block(16, 16);
+        const float one = 1.0f;
+        const float minus_one = -1.0f;
+
+        for (int panel_start = 0; panel_start < n;
+             panel_start += panel_width) {
+            int panel_end = std::min(n, panel_start + panel_width);
+            int panel_size = panel_end - panel_start;
+
+            for (int k = panel_start; k < panel_end; k++) {
+                find_pivot_col_major_v6_kernel<<<1, pivot_threads>>>(
+                    d_A, n, k, d_pivot, d_pivot_abs, d_status);
+                cuda_check(cudaGetLastError(),
+                           "launch find_pivot_col_major_v6_kernel");
+
+                int column_grid = (n + block_size - 1) / block_size;
+                if (fuse_row_swap) {
+                    check_pivot_swap_rhs_and_rows_col_major_v6b_kernel
+                        <<<column_grid, block_size>>>(
+                            d_A, d_b, n, k, tol, d_pivot, d_pivot_abs,
+                            d_status);
+                    cuda_check(
+                        cudaGetLastError(),
+                        "launch check_pivot_swap_rhs_and_rows_col_major_v6b_kernel");
+                } else {
+                    check_pivot_and_swap_rhs_v6_kernel<<<1, 1>>>(
+                        d_b, k, tol, d_pivot, d_pivot_abs, d_status);
+                    cuda_check(cudaGetLastError(),
+                               "launch check_pivot_and_swap_rhs_v6_kernel");
+
+                    swap_rows_col_major_v6_kernel<<<column_grid, block_size>>>(
+                        d_A, n, k, d_pivot, d_status);
+                    cuda_check(cudaGetLastError(),
+                               "launch swap_rows_col_major_v6_kernel");
+                }
+
+                int remaining_rows = n - k - 1;
+                if (remaining_rows > 0) {
+                    int row_grid =
+                        (remaining_rows + block_size - 1) / block_size;
+                    compute_panel_multipliers_v6_kernel
+                        <<<row_grid, block_size>>>(d_A, n, k, d_status);
+                    cuda_check(cudaGetLastError(),
+                               "launch compute_panel_multipliers_v6_kernel");
+                }
+
+                int panel_columns = panel_end - k - 1;
+                if (remaining_rows > 0 && panel_columns > 0) {
+                    dim3 panel_grid(
+                        (panel_columns + panel_block.x - 1) / panel_block.x,
+                        (remaining_rows + panel_block.y - 1) / panel_block.y);
+                    update_panel_v6_kernel<<<panel_grid, panel_block>>>(
+                        d_A, n, k, panel_end, d_status);
+                    cuda_check(cudaGetLastError(),
+                               "launch update_panel_v6_kernel");
+                }
+            }
+
+            int trailing_size = n - panel_end;
+            if (trailing_size > 0) {
+                float* d_L11 = d_A +
+                    static_cast<size_t>(panel_start) * n + panel_start;
+                float* d_U12 = d_A +
+                    static_cast<size_t>(panel_end) * n + panel_start;
+                cublas_check(cublasStrsm(
+                                 handle, CUBLAS_SIDE_LEFT,
+                                 CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
+                                 CUBLAS_DIAG_UNIT, panel_size, trailing_size,
+                                 &one, d_L11, n, d_U12, n),
+                             "V6a cublasStrsm(U12)");
+
+                float* d_L21 = d_A +
+                    static_cast<size_t>(panel_start) * n + panel_end;
+                float* d_A22 = d_A +
+                    static_cast<size_t>(panel_end) * n + panel_end;
+                cublas_check(cublasSgemm(
+                                 handle, CUBLAS_OP_N, CUBLAS_OP_N,
+                                 trailing_size, trailing_size, panel_size,
+                                 &minus_one, d_L21, n, d_U12, n, &one, d_A22,
+                                 n),
+                             "V6a cublasSgemm(A22)");
+            }
+        }
+
+        solve_lu_col_major_v6_kernel<<<1, 1>>>(d_A, d_b, n, tol, d_status);
+        cuda_check(cudaGetLastError(),
+                   "launch solve_lu_col_major_v6_kernel");
+
+        cuda_check(cudaEventRecord(e1), "V6a cudaEventRecord(stop)");
+        cuda_check(cudaEventSynchronize(e1), "CUDA V6a blocked LU solve");
+        host_phases.solve_wall_ms = wall_elapsed_ms(phase_start);
+
+        float ms = 0.0f;
+        cuda_check(cudaEventElapsedTime(&ms, e0, e1),
+                   "V6a cudaEventElapsedTime");
+
+        phase_start = WallClock::now();
+        int status = 0;
+        cuda_check(cudaMemcpy(&status, d_status, sizeof(int),
+                              cudaMemcpyDeviceToHost),
+                   "V6a copy status to host");
+        cuda_check(cudaMemcpy(b, d_b, static_cast<size_t>(n) * sizeof(float),
+                              cudaMemcpyDeviceToHost),
+                   "V6a copy x to host");
+        host_phases.d2h_ms = wall_elapsed_ms(phase_start);
+
+        phase_start = WallClock::now();
+        cleanup();
+        host_phases.cleanup_ms = wall_elapsed_ms(phase_start);
+        return {static_cast<double>(ms), status == 0, host_phases};
+    } catch (...) {
+        cleanup();
+        throw;
+    }
+}
+
+static GpuSolveResult gauss_gpu_v6b_blocked(const float* A_row_major,
+                                             float* b, int n, float tol,
+                                             int panel_width,
+                                             int block_size = 256) {
+    return gauss_gpu_v6a_blocked(A_row_major, b, n, tol, panel_width,
+                                 block_size, true);
+}
+
 static GpuSolveResult gauss_gpu_v4_cusolver(const float* A_row_major, float* b,
-                                            int n) {
+                                             int n) {
     cusolverDnHandle_t handle = nullptr;
     float *d_A = nullptr, *d_b = nullptr, *d_work = nullptr;
     int *d_ipiv = nullptr, *d_info = nullptr;
@@ -1276,56 +1647,72 @@ static GpuSolveResult gauss_gpu_v4_cusolver(const float* A_row_major, float* b,
     };
 
     try {
+        GpuHostPhaseTimes host_phases;
+
+        auto phase_start = WallClock::now();
         std::vector<float> A_col_major(n * n);
         for (int row = 0; row < n; row++) {
             for (int col = 0; col < n; col++) {
                 A_col_major[col * n + row] = A_row_major[row * n + col];
             }
         }
+        host_phases.transpose_ms = wall_elapsed_ms(phase_start);
 
+        phase_start = WallClock::now();
         cusolver_check(cusolverDnCreate(&handle), "cusolverDnCreate");
         cuda_check(cudaMalloc(&d_A, n * n * sizeof(float)), "cudaMalloc(A)");
         cuda_check(cudaMalloc(&d_b, n * sizeof(float)), "cudaMalloc(b)");
         cuda_check(cudaMalloc(&d_ipiv, n * sizeof(int)), "cudaMalloc(ipiv)");
         cuda_check(cudaMalloc(&d_info, sizeof(int)), "cudaMalloc(info)");
+        host_phases.setup_alloc_ms = wall_elapsed_ms(phase_start);
 
+        phase_start = WallClock::now();
         cuda_check(cudaMemcpy(d_A, A_col_major.data(), n * n * sizeof(float),
-                              cudaMemcpyHostToDevice), "copy A to device");
+                               cudaMemcpyHostToDevice), "copy A to device");
         cuda_check(cudaMemcpy(d_b, b, n * sizeof(float),
-                              cudaMemcpyHostToDevice), "copy b to device");
+                               cudaMemcpyHostToDevice), "copy b to device");
+        host_phases.h2d_ms = wall_elapsed_ms(phase_start);
 
+        phase_start = WallClock::now();
         int work_size = 0;
         cusolver_check(cusolverDnSgetrf_bufferSize(handle, n, n, d_A, n,
-                                                   &work_size),
-                       "cusolverDnSgetrf_bufferSize");
+                                                    &work_size),
+                        "cusolverDnSgetrf_bufferSize");
         cuda_check(cudaMalloc(&d_work, work_size * sizeof(float)),
-                   "cudaMalloc(work)");
+                    "cudaMalloc(work)");
+        host_phases.workspace_ms = wall_elapsed_ms(phase_start);
 
         cuda_check(cudaEventCreate(&e0), "cudaEventCreate(start)");
         cuda_check(cudaEventCreate(&e1), "cudaEventCreate(stop)");
         cuda_check(cudaEventRecord(e0), "cudaEventRecord(start)");
 
+        phase_start = WallClock::now();
         cusolver_check(cusolverDnSgetrf(handle, n, n, d_A, n, d_work, d_ipiv,
-                                        d_info),
-                       "cusolverDnSgetrf");
+                                         d_info),
+                        "cusolverDnSgetrf");
         cusolver_check(cusolverDnSgetrs(handle, CUBLAS_OP_N, n, 1, d_A, n,
                                         d_ipiv, d_b, n, d_info),
                        "cusolverDnSgetrs");
 
         cuda_check(cudaEventRecord(e1), "cudaEventRecord(stop)");
         cuda_check(cudaEventSynchronize(e1), "CUDA cuSOLVER solve");
+        host_phases.solve_wall_ms = wall_elapsed_ms(phase_start);
 
         float ms = 0.0f;
         cuda_check(cudaEventElapsedTime(&ms, e0, e1), "cudaEventElapsedTime");
 
+        phase_start = WallClock::now();
         int info = 0;
         cuda_check(cudaMemcpy(&info, d_info, sizeof(int), cudaMemcpyDeviceToHost),
-                   "copy info to host");
+                    "copy info to host");
         cuda_check(cudaMemcpy(b, d_b, n * sizeof(float), cudaMemcpyDeviceToHost),
-                   "copy x to host");
+                    "copy x to host");
+        host_phases.d2h_ms = wall_elapsed_ms(phase_start);
 
+        phase_start = WallClock::now();
         cleanup();
-        return {static_cast<double>(ms), info == 0};
+        host_phases.cleanup_ms = wall_elapsed_ms(phase_start);
+        return {static_cast<double>(ms), info == 0, host_phases};
     } catch (...) {
         cleanup();
         throw;
@@ -1401,7 +1788,31 @@ struct M7Row {
     double residual_max;
     double solution_error_norm2;
     double solution_error_max;
+    bool cpu_reference_ran;
+    double generation_ms;
+    double prepare_ms;
+    double cpu_reference_ms;
+    double gpu_wall_ms;
+    double validation_ms;
+    double pre_csv_total_ms;
+    double v4_transpose_ms;
+    double v4_setup_alloc_ms;
+    double v4_h2d_ms;
+    double v4_workspace_ms;
+    double v4_solve_wall_ms;
+    double v4_d2h_ms;
+    double v4_cleanup_ms;
     std::string driver_version;
+};
+
+struct M7PhaseTimes {
+    bool cpu_reference_ran = false;
+    double generation_ms = 0.0;
+    double prepare_ms = 0.0;
+    double cpu_reference_ms = 0.0;
+    double gpu_wall_ms = 0.0;
+    double validation_ms = 0.0;
+    double pre_csv_total_ms = 0.0;
 };
 
 std::string current_timestamp() {
@@ -1477,7 +1888,10 @@ void write_m7_csv_header_if_missing(const std::string& path) {
     f << "timestamp,variant,n,kappa,matrix_family,seed,run_index,block_size,"
          "tile,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,"
          "residual_norm2,residual_max,solution_error_norm2,"
-         "solution_error_max,driver_version\n";
+         "solution_error_max,cpu_reference_ran,generation_ms,prepare_ms,"
+         "cpu_reference_ms,gpu_wall_ms,validation_ms,pre_csv_total_ms,"
+         "v4_transpose_ms,v4_setup_alloc_ms,v4_h2d_ms,v4_workspace_ms,"
+         "v4_solve_wall_ms,v4_d2h_ms,v4_cleanup_ms,driver_version\n";
 }
 
 void append_m7_csv(const std::string& path, const M7Row& r) {
@@ -1489,7 +1903,14 @@ void append_m7_csv(const std::string& path, const M7Row& r) {
       << r.pivoting << "," << r.cpu_ms << "," << r.gpu_ms << ","
       << r.effective_gflops << "," << r.residual_norm2 << ","
       << r.residual_max << "," << r.solution_error_norm2 << ","
-      << r.solution_error_max << "," << r.driver_version << "\n";
+      << r.solution_error_max << "," << (r.cpu_reference_ran ? 1 : 0) << ","
+      << r.generation_ms << "," << r.prepare_ms << ","
+      << r.cpu_reference_ms << "," << r.gpu_wall_ms << ","
+      << r.validation_ms << "," << r.pre_csv_total_ms << ","
+      << r.v4_transpose_ms << "," << r.v4_setup_alloc_ms << ","
+      << r.v4_h2d_ms << "," << r.v4_workspace_ms << ","
+      << r.v4_solve_wall_ms << "," << r.v4_d2h_ms << ","
+      << r.v4_cleanup_ms << "," << r.driver_version << "\n";
 }
 
 double max_abs_residual(const std::vector<double>& A,
@@ -2256,25 +2677,28 @@ void run_ablation_case_fast_custom(int n, int block_size,
                                    const std::string& out_path,
                                    const std::string& variant,
                                    FastUpdateKind update_kind,
-                                   TileShape tile = {}) {
+                                   TileShape tile = {},
+                                   bool run_cpu_reference = true) {
     const float tol = 1e-6f;
     std::vector<double> A_original;
     std::vector<double> b_original;
     std::vector<double> x_ref;
     make_known_solution_system(n, A_original, b_original, x_ref);
 
-    std::vector<float> A_cpu = to_float_vector(A_original);
-    std::vector<float> b_cpu = to_float_vector(b_original);
-    std::vector<float> A_gpu = A_cpu;
-    std::vector<float> b_gpu = b_cpu;
-
-    auto t0 = std::chrono::high_resolution_clock::now();
-    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double cpu_ms =
-        std::chrono::duration<double, std::milli>(t1 - t0).count();
-    if (x_cpu.empty()) {
-        throw std::runtime_error("CPU V1 reference reported singular matrix");
+    std::vector<float> A_gpu = to_float_vector(A_original);
+    std::vector<float> b_gpu = to_float_vector(b_original);
+    std::vector<float> x_cpu;
+    double cpu_ms = -1.0;
+    if (run_cpu_reference) {
+        std::vector<float> A_cpu = to_float_vector(A_original);
+        std::vector<float> b_cpu = to_float_vector(b_original);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        cpu_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        if (x_cpu.empty()) {
+            throw std::runtime_error("CPU V1 reference reported singular matrix");
+        }
     }
 
     GpuSolveResult gpu = gauss_gpu_fast_custom(
@@ -2284,14 +2708,17 @@ void run_ablation_case_fast_custom(int n, int block_size,
     }
 
     std::vector<double> x_gpu = to_double_vector(b_gpu);
-    std::vector<double> x_cpu_double = to_double_vector(x_cpu);
+    std::vector<double> x_cpu_double =
+        run_cpu_reference ? to_double_vector(x_cpu) : std::vector<double>();
     double residual =
         max_abs_residual(A_original, b_original, x_gpu, n);
     double residual_l2 =
         normalized_residual_l2(A_original, b_original, x_gpu, n);
     double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
     double solution_max = max_abs_solution_error(x_gpu, x_ref);
-    double cpu_gpu_l2 = relative_solution_error_l2(x_gpu, x_cpu_double);
+    double cpu_gpu_l2 =
+        run_cpu_reference ? relative_solution_error_l2(x_gpu, x_cpu_double)
+                          : -1.0;
 
     AblationRow row;
     row.timestamp = current_timestamp();
@@ -2326,25 +2753,28 @@ void run_ablation_case_fast_custom(int n, int block_size,
 }
 
 void run_ablation_case_vlu(int n, int block_size,
-                           const std::string& out_path) {
+                            const std::string& out_path,
+                            bool run_cpu_reference = true) {
     const float tol = 1e-6f;
     std::vector<double> A_original;
     std::vector<double> b_original;
     std::vector<double> x_ref;
     make_known_solution_system(n, A_original, b_original, x_ref);
 
-    std::vector<float> A_cpu = to_float_vector(A_original);
-    std::vector<float> b_cpu = to_float_vector(b_original);
-    std::vector<float> A_gpu = A_cpu;
-    std::vector<float> b_gpu = b_cpu;
-
-    auto t0 = std::chrono::high_resolution_clock::now();
-    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double cpu_ms =
-        std::chrono::duration<double, std::milli>(t1 - t0).count();
-    if (x_cpu.empty()) {
-        throw std::runtime_error("CPU V1 reference reported singular matrix");
+    std::vector<float> A_gpu = to_float_vector(A_original);
+    std::vector<float> b_gpu = to_float_vector(b_original);
+    std::vector<float> x_cpu;
+    double cpu_ms = -1.0;
+    if (run_cpu_reference) {
+        std::vector<float> A_cpu = to_float_vector(A_original);
+        std::vector<float> b_cpu = to_float_vector(b_original);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        cpu_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        if (x_cpu.empty()) {
+            throw std::runtime_error("CPU V1 reference reported singular matrix");
+        }
     }
 
     GpuSolveResult gpu =
@@ -2354,14 +2784,17 @@ void run_ablation_case_vlu(int n, int block_size,
     }
 
     std::vector<double> x_gpu = to_double_vector(b_gpu);
-    std::vector<double> x_cpu_double = to_double_vector(x_cpu);
+    std::vector<double> x_cpu_double =
+        run_cpu_reference ? to_double_vector(x_cpu) : std::vector<double>();
     double residual =
         max_abs_residual(A_original, b_original, x_gpu, n);
     double residual_l2 =
         normalized_residual_l2(A_original, b_original, x_gpu, n);
     double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
     double solution_max = max_abs_solution_error(x_gpu, x_ref);
-    double cpu_gpu_l2 = relative_solution_error_l2(x_gpu, x_cpu_double);
+    double cpu_gpu_l2 =
+        run_cpu_reference ? relative_solution_error_l2(x_gpu, x_cpu_double)
+                          : -1.0;
 
     AblationRow row;
     row.timestamp = current_timestamp();
@@ -2391,25 +2824,103 @@ void run_ablation_case_vlu(int n, int block_size,
               << "  cpu_gpu_l2=" << cpu_gpu_l2 << "\n";
 }
 
-void run_ablation_case_v4(int n, int block_size, const std::string& out_path) {
+void run_ablation_case_v6a(int n, int block_size,
+                            const std::string& out_path, int panel_width,
+                            bool run_cpu_reference = true,
+                            const std::string& variant_name = "V6a",
+                            bool fuse_row_swap = false) {
     const float tol = 1e-6f;
     std::vector<double> A_original;
     std::vector<double> b_original;
     std::vector<double> x_ref;
     make_known_solution_system(n, A_original, b_original, x_ref);
 
-    std::vector<float> A_cpu = to_float_vector(A_original);
-    std::vector<float> b_cpu = to_float_vector(b_original);
-    std::vector<float> A_gpu = A_cpu;
-    std::vector<float> b_gpu = b_cpu;
+    std::vector<float> A_gpu = to_float_vector(A_original);
+    std::vector<float> b_gpu = to_float_vector(b_original);
+    std::vector<float> x_cpu;
+    double cpu_ms = -1.0;
+    if (run_cpu_reference) {
+        std::vector<float> A_cpu = to_float_vector(A_original);
+        std::vector<float> b_cpu = to_float_vector(b_original);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        cpu_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        if (x_cpu.empty()) {
+            throw std::runtime_error("CPU V1 reference reported singular matrix");
+        }
+    }
 
-    auto t0 = std::chrono::high_resolution_clock::now();
-    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double cpu_ms =
-        std::chrono::duration<double, std::milli>(t1 - t0).count();
-    if (x_cpu.empty()) {
-        throw std::runtime_error("CPU V1 reference reported singular matrix");
+    GpuSolveResult gpu = gauss_gpu_v6a_blocked(
+        A_gpu.data(), b_gpu.data(), n, tol, panel_width, block_size,
+        fuse_row_swap);
+    if (!gpu.success) {
+        throw std::runtime_error(variant_name +
+                                 " blocked LU reported singular matrix");
+    }
+
+    std::vector<double> x_gpu = to_double_vector(b_gpu);
+    std::vector<double> x_cpu_double =
+        run_cpu_reference ? to_double_vector(x_cpu) : std::vector<double>();
+    double residual = max_abs_residual(A_original, b_original, x_gpu, n);
+    double residual_l2 =
+        normalized_residual_l2(A_original, b_original, x_gpu, n);
+    double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
+    double solution_max = max_abs_solution_error(x_gpu, x_ref);
+    double cpu_gpu_l2 =
+        run_cpu_reference ? relative_solution_error_l2(x_gpu, x_cpu_double)
+                          : -1.0;
+
+    AblationRow row;
+    row.timestamp = current_timestamp();
+    row.variant = variant_name + panel_suffix(panel_width);
+    row.n = n;
+    row.block_size = block_size;
+    row.precision = "FP32";
+    row.pivoting = "ordinary_partial_pivoting_blocked_lu_cublas";
+    row.cpu_ms = cpu_ms;
+    row.gpu_ms = gpu.elapsed_ms;
+    row.effective_gflops = effective_lu_gflops(n, gpu.elapsed_ms);
+    row.residual_norm2 = residual_l2;
+    row.residual_max = residual;
+    row.solution_error_norm2 = solution_l2;
+    row.solution_error_max = solution_max;
+    row.driver_version = driver_version_string();
+    append_ablation_csv(out_path, row);
+
+    std::cout << "  variant=" << row.variant
+              << "  n=" << n
+              << "  panel=" << panel_width
+              << "  GPU=" << gpu.elapsed_ms << " ms"
+              << "  GPU_wall=" << gpu.host_phases.solve_wall_ms << " ms"
+              << "  GFLOP/s=" << row.effective_gflops
+              << "  residual_l2=" << residual_l2
+              << "  solution_error_l2=" << solution_l2
+              << "  cpu_gpu_l2=" << cpu_gpu_l2 << "\n";
+}
+
+void run_ablation_case_v4(int n, int block_size, const std::string& out_path,
+                          bool run_cpu_reference = true) {
+    const float tol = 1e-6f;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    std::vector<float> A_gpu = to_float_vector(A_original);
+    std::vector<float> b_gpu = to_float_vector(b_original);
+    std::vector<float> x_cpu;
+    double cpu_ms = -1.0;
+    if (run_cpu_reference) {
+        std::vector<float> A_cpu = to_float_vector(A_original);
+        std::vector<float> b_cpu = to_float_vector(b_original);
+        auto t0 = std::chrono::high_resolution_clock::now();
+        x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        cpu_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        if (x_cpu.empty()) {
+            throw std::runtime_error("CPU V1 reference reported singular matrix");
+        }
     }
 
     GpuSolveResult gpu = gauss_gpu_v4_cusolver(A_gpu.data(), b_gpu.data(), n);
@@ -2418,14 +2929,17 @@ void run_ablation_case_v4(int n, int block_size, const std::string& out_path) {
     }
 
     std::vector<double> x_gpu = to_double_vector(b_gpu);
-    std::vector<double> x_cpu_double = to_double_vector(x_cpu);
+    std::vector<double> x_cpu_double =
+        run_cpu_reference ? to_double_vector(x_cpu) : std::vector<double>();
     double residual =
         max_abs_residual(A_original, b_original, x_gpu, n);
     double residual_l2 =
         normalized_residual_l2(A_original, b_original, x_gpu, n);
     double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
     double solution_max = max_abs_solution_error(x_gpu, x_ref);
-    double cpu_gpu_l2 = relative_solution_error_l2(x_gpu, x_cpu_double);
+    double cpu_gpu_l2 =
+        run_cpu_reference ? relative_solution_error_l2(x_gpu, x_cpu_double)
+                          : -1.0;
 
     AblationRow row;
     row.timestamp = current_timestamp();
@@ -2496,7 +3010,8 @@ void append_real_matrix_row(const std::string& out_path,
 void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
                                    const std::string& out_path,
                                    const std::string& variant,
-                                   TileShape tile = {}) {
+                                   TileShape tile = {},
+                                   int panel_width = 64) {
     const float tol = 1e-6f;
     std::vector<float> A_cpu = to_float_vector(system.A);
     std::vector<float> b_cpu = to_float_vector(system.b);
@@ -2570,13 +3085,35 @@ void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
         append_real_matrix_row(out_path, system, "VLU", block_size, "FP32",
                                "ordinary_partial_pivoting_custom_lu", cpu_ms,
                                gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V6a") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_v6a_blocked(
+            A_gpu.data(), b_gpu.data(), system.n, tol, panel_width,
+            block_size);
+        if (!gpu.success) throw std::runtime_error("V10 V6a GPU failed");
+        append_real_matrix_row(
+            out_path, system, "V6a" + panel_suffix(panel_width), block_size,
+            "FP32", "ordinary_partial_pivoting_blocked_lu_cublas", cpu_ms,
+            gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V6b") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_v6b_blocked(
+            A_gpu.data(), b_gpu.data(), system.n, tol, panel_width,
+            block_size);
+        if (!gpu.success) throw std::runtime_error("V10 V6b GPU failed");
+        append_real_matrix_row(
+            out_path, system, "V6b" + panel_suffix(panel_width), block_size,
+            "FP32", "ordinary_partial_pivoting_blocked_lu_cublas_fused_swap",
+            cpu_ms, gpu.elapsed_ms, to_double_vector(b_gpu));
     } else {
         throw std::runtime_error("unsupported V10 variant: " + variant);
     }
 }
 
 void append_m7_row(const std::string& out_path,
-                   const DenseSystem& system,
+                    const DenseSystem& system,
                    const std::string& variant_label,
                    double kappa,
                    int seed,
@@ -2584,10 +3121,17 @@ void append_m7_row(const std::string& out_path,
                    int block_size,
                    TileShape tile,
                    const std::string& precision,
-                   const std::string& pivoting,
-                   double cpu_ms,
-                   double gpu_ms,
-                   const std::vector<double>& x_gpu) {
+                    const std::string& pivoting,
+                    double cpu_ms,
+                    double gpu_ms,
+                    const std::vector<double>& x_gpu,
+                    M7PhaseTimes timings,
+                    const GpuHostPhaseTimes& gpu_host_phases = {}) {
+    std::cerr << "M7_PHASE phase=validation status=start"
+              << " n=" << system.n << " variant=" << variant_label
+              << " run=" << run_index << std::endl;
+    auto validation_start = WallClock::now();
+
     M7Row row;
     row.timestamp = current_timestamp();
     row.variant = variant_label;
@@ -2609,14 +3153,47 @@ void append_m7_row(const std::string& out_path,
     row.solution_error_norm2 =
         relative_solution_error_l2(x_gpu, system.x_ref);
     row.solution_error_max = max_abs_solution_error(x_gpu, system.x_ref);
+    timings.validation_ms = wall_elapsed_ms(validation_start);
+    timings.pre_csv_total_ms =
+        timings.generation_ms + timings.prepare_ms +
+        timings.cpu_reference_ms + timings.gpu_wall_ms +
+        timings.validation_ms;
+    row.cpu_reference_ran = timings.cpu_reference_ran;
+    row.generation_ms = timings.generation_ms;
+    row.prepare_ms = timings.prepare_ms;
+    row.cpu_reference_ms = timings.cpu_reference_ms;
+    row.gpu_wall_ms = timings.gpu_wall_ms;
+    row.validation_ms = timings.validation_ms;
+    row.pre_csv_total_ms = timings.pre_csv_total_ms;
+    row.v4_transpose_ms = gpu_host_phases.transpose_ms;
+    row.v4_setup_alloc_ms = gpu_host_phases.setup_alloc_ms;
+    row.v4_h2d_ms = gpu_host_phases.h2d_ms;
+    row.v4_workspace_ms = gpu_host_phases.workspace_ms;
+    row.v4_solve_wall_ms = gpu_host_phases.solve_wall_ms;
+    row.v4_d2h_ms = gpu_host_phases.d2h_ms;
+    row.v4_cleanup_ms = gpu_host_phases.cleanup_ms;
     row.driver_version = driver_version_string();
+
+    std::cerr << "M7_PHASE phase=validation status=done"
+              << " n=" << system.n << " variant=" << variant_label
+              << " run=" << run_index
+              << " elapsed_ms=" << timings.validation_ms << std::endl;
+
+    auto csv_start = WallClock::now();
     append_m7_csv(out_path, row);
+    double csv_ms = wall_elapsed_ms(csv_start);
+    std::cerr << "M7_PHASE phase=csv status=done"
+              << " n=" << system.n << " variant=" << variant_label
+              << " run=" << run_index << " elapsed_ms=" << csv_ms
+              << " total_wall_ms=" << (timings.pre_csv_total_ms + csv_ms)
+              << std::endl;
 
     std::cout << "  variant=" << row.variant
               << "  n=" << row.n
               << "  kappa=" << row.kappa
               << "  run=" << row.run_index
               << "  GPU=" << row.gpu_ms << " ms"
+              << "  GPU_wall=" << row.gpu_wall_ms << " ms"
               << "  residual_l2=" << row.residual_norm2
               << "  solution_error_l2=" << row.solution_error_norm2 << "\n";
 }
@@ -2628,76 +3205,124 @@ void run_m7_synthetic_case(const DenseSystem& system,
                            double kappa,
                            int seed,
                            int run_index,
-                           TileShape tile = {}) {
+                           bool run_cpu_reference,
+                           double generation_ms,
+                           TileShape tile = {},
+                           int panel_width = 64) {
     const float tol = 1e-6f;
-    std::vector<float> A_cpu = to_float_vector(system.A);
-    std::vector<float> b_cpu = to_float_vector(system.b);
+    M7PhaseTimes timings;
+    timings.generation_ms = generation_ms;
+    timings.cpu_reference_ran = run_cpu_reference;
+    double cpu_ms = -1.0;
 
-    auto t0 = std::chrono::high_resolution_clock::now();
-    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), system.n, tol);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double cpu_ms =
-        std::chrono::duration<double, std::milli>(t1 - t0).count();
-    if (x_cpu.empty()) {
-        throw std::runtime_error("M7 CPU reference reported singular matrix");
+    if (run_cpu_reference) {
+        std::cerr << "M7_PHASE phase=prepare_cpu status=start"
+                  << " n=" << system.n << " variant=" << variant
+                  << " run=" << run_index << std::endl;
+        auto phase_start = WallClock::now();
+        std::vector<float> A_cpu = to_float_vector(system.A);
+        std::vector<float> b_cpu = to_float_vector(system.b);
+        double cpu_prepare_ms = wall_elapsed_ms(phase_start);
+        timings.prepare_ms += cpu_prepare_ms;
+        std::cerr << "M7_PHASE phase=prepare_cpu status=done"
+                  << " n=" << system.n << " variant=" << variant
+                  << " run=" << run_index
+                  << " elapsed_ms=" << cpu_prepare_ms << std::endl;
+
+        std::cerr << "M7_PHASE phase=cpu_reference status=start"
+                  << " n=" << system.n << " variant=" << variant
+                  << " run=" << run_index << std::endl;
+        phase_start = WallClock::now();
+        auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), system.n, tol);
+        timings.cpu_reference_ms = wall_elapsed_ms(phase_start);
+        cpu_ms = timings.cpu_reference_ms;
+        if (x_cpu.empty()) {
+            throw std::runtime_error("M7 CPU reference reported singular matrix");
+        }
+        std::cerr << "M7_PHASE phase=cpu_reference status=done"
+                  << " n=" << system.n << " variant=" << variant
+                  << " run=" << run_index
+                  << " elapsed_ms=" << timings.cpu_reference_ms << std::endl;
+    } else {
+        std::cerr << "M7_PHASE phase=cpu_reference status=skipped"
+                  << " n=" << system.n << " variant=" << variant
+                  << " run=" << run_index << std::endl;
     }
 
+    std::cerr << "M7_PHASE phase=prepare_gpu status=start"
+              << " n=" << system.n << " variant=" << variant
+              << " run=" << run_index << std::endl;
+    auto phase_start = WallClock::now();
+    std::vector<float> A_gpu = to_float_vector(system.A);
+    std::vector<float> b_gpu = to_float_vector(system.b);
+    double gpu_prepare_ms = wall_elapsed_ms(phase_start);
+    timings.prepare_ms += gpu_prepare_ms;
+    std::cerr << "M7_PHASE phase=prepare_gpu status=done"
+              << " n=" << system.n << " variant=" << variant
+              << " run=" << run_index << " elapsed_ms=" << gpu_prepare_ms
+              << std::endl;
+
+    GpuSolveResult gpu{0.0, false};
+    std::string variant_label;
+    std::string pivoting;
+    std::cerr << "M7_PHASE phase=gpu_solver status=start"
+              << " n=" << system.n << " variant=" << variant
+              << " run=" << run_index << std::endl;
+    phase_start = WallClock::now();
     if (variant == "V3f") {
-        std::vector<float> A_gpu = to_float_vector(system.A);
-        std::vector<float> b_gpu = to_float_vector(system.b);
-        GpuSolveResult gpu = gauss_gpu_fast_custom(
+        gpu = gauss_gpu_fast_custom(
             A_gpu.data(), b_gpu.data(), system.n, tol, FastUpdateKind::Global2D,
             block_size, tile);
-        if (!gpu.success) throw std::runtime_error("M7 V3f GPU failed");
-        append_m7_row(out_path, system, "V3f", kappa, seed, run_index,
-                      block_size, tile, "FP32", "ordinary_partial_pivoting",
-                      cpu_ms, gpu.elapsed_ms, to_double_vector(b_gpu));
+        variant_label = "V3f";
+        pivoting = "ordinary_partial_pivoting";
     } else if (variant == "V4") {
-        std::vector<float> A_gpu = to_float_vector(system.A);
-        std::vector<float> b_gpu = to_float_vector(system.b);
-        GpuSolveResult gpu =
-            gauss_gpu_v4_cusolver(A_gpu.data(), b_gpu.data(), system.n);
-        if (!gpu.success) throw std::runtime_error("M7 V4 cuSOLVER failed");
-        append_m7_row(out_path, system, "V4", kappa, seed, run_index,
-                      block_size, tile, "FP32",
-                      "ordinary_partial_pivoting_cusolver_getrf", cpu_ms,
-                      gpu.elapsed_ms, to_double_vector(b_gpu));
+        gpu = gauss_gpu_v4_cusolver(A_gpu.data(), b_gpu.data(), system.n);
+        variant_label = "V4";
+        pivoting = "ordinary_partial_pivoting_cusolver_getrf";
     } else if (variant == "V5af") {
-        std::vector<float> A_gpu = to_float_vector(system.A);
-        std::vector<float> b_gpu = to_float_vector(system.b);
-        GpuSolveResult gpu = gauss_gpu_fast_custom(
+        gpu = gauss_gpu_fast_custom(
             A_gpu.data(), b_gpu.data(), system.n, tol,
             FastUpdateKind::TiledShared, block_size, tile);
-        if (!gpu.success) throw std::runtime_error("M7 V5af GPU failed");
-        append_m7_row(out_path, system, "V5af" + tile_suffix(tile), kappa,
-                      seed, run_index, block_size, tile, "FP32",
-                      "ordinary_partial_pivoting", cpu_ms, gpu.elapsed_ms,
-                      to_double_vector(b_gpu));
+        variant_label = "V5af" + tile_suffix(tile);
+        pivoting = "ordinary_partial_pivoting";
     } else if (variant == "V5bf") {
-        std::vector<float> A_gpu = to_float_vector(system.A);
-        std::vector<float> b_gpu = to_float_vector(system.b);
-        GpuSolveResult gpu = gauss_gpu_fast_custom(
+        gpu = gauss_gpu_fast_custom(
             A_gpu.data(), b_gpu.data(), system.n, tol,
             FastUpdateKind::TiledSharedUnrolled2, block_size, tile);
-        if (!gpu.success) throw std::runtime_error("M7 V5bf GPU failed");
-        append_m7_row(out_path, system, "V5bf" + tile_suffix(tile), kappa,
-                      seed, run_index, block_size, tile, "FP32",
-                      "ordinary_partial_pivoting", cpu_ms, gpu.elapsed_ms,
-                      to_double_vector(b_gpu));
+        variant_label = "V5bf" + tile_suffix(tile);
+        pivoting = "ordinary_partial_pivoting";
     } else if (variant == "VLU") {
-        std::vector<float> A_gpu = to_float_vector(system.A);
-        std::vector<float> b_gpu = to_float_vector(system.b);
-        GpuSolveResult gpu =
-            gauss_gpu_lu_custom(A_gpu.data(), b_gpu.data(), system.n, tol,
-                                block_size);
-        if (!gpu.success) throw std::runtime_error("M7 VLU GPU failed");
-        append_m7_row(out_path, system, "VLU", kappa, seed, run_index,
-                      block_size, tile, "FP32",
-                      "ordinary_partial_pivoting_custom_lu", cpu_ms,
-                      gpu.elapsed_ms, to_double_vector(b_gpu));
+        gpu = gauss_gpu_lu_custom(A_gpu.data(), b_gpu.data(), system.n, tol,
+                                  block_size);
+        variant_label = "VLU";
+        pivoting = "ordinary_partial_pivoting_custom_lu";
+    } else if (variant == "V6a") {
+        gpu = gauss_gpu_v6a_blocked(A_gpu.data(), b_gpu.data(), system.n, tol,
+                                    panel_width, block_size);
+        variant_label = "V6a" + panel_suffix(panel_width);
+        pivoting = "ordinary_partial_pivoting_blocked_lu_cublas";
+    } else if (variant == "V6b") {
+        gpu = gauss_gpu_v6b_blocked(A_gpu.data(), b_gpu.data(), system.n, tol,
+                                    panel_width, block_size);
+        variant_label = "V6b" + panel_suffix(panel_width);
+        pivoting = "ordinary_partial_pivoting_blocked_lu_cublas_fused_swap";
     } else {
         throw std::runtime_error("unsupported M7 variant: " + variant);
     }
+
+    timings.gpu_wall_ms = wall_elapsed_ms(phase_start);
+    std::cerr << "M7_PHASE phase=gpu_solver status=done"
+              << " n=" << system.n << " variant=" << variant_label
+              << " run=" << run_index
+              << " elapsed_ms=" << timings.gpu_wall_ms
+              << " cuda_event_ms=" << gpu.elapsed_ms << std::endl;
+    if (!gpu.success) {
+        throw std::runtime_error("M7 " + variant_label + " GPU failed");
+    }
+
+    append_m7_row(out_path, system, variant_label, kappa, seed, run_index,
+                  block_size, tile, "FP32", pivoting, cpu_ms, gpu.elapsed_ms,
+                  to_double_vector(b_gpu), timings, gpu.host_phases);
 }
 
 int run_ablation_cli(int argc, char** argv) {
@@ -2706,6 +3331,9 @@ int run_ablation_cli(int argc, char** argv) {
     int block_size = 512;
     int base_seed = 42;
     int repeats = 1;
+    int m7_cpu_reference_max_n = 2048;
+    int cpu_reference_max_n = 2048;
+    int panel_width = 64;
     std::string out_path = "results/ablation_pilot.csv";
     std::string variant = "V1";
     std::string real_matrix_path;
@@ -2722,12 +3350,21 @@ int run_ablation_cli(int argc, char** argv) {
             base_seed = std::stoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--repeats") == 0 && i + 1 < argc) {
             repeats = std::stoi(argv[++i]);
+        } else if (std::strcmp(argv[i], "--m7-cpu-reference-max-n") == 0 &&
+                   i + 1 < argc) {
+            m7_cpu_reference_max_n = std::stoi(argv[++i]);
+        } else if (std::strcmp(argv[i], "--cpu-reference-max-n") == 0 &&
+                   i + 1 < argc) {
+            cpu_reference_max_n = std::stoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--block") == 0 && i + 1 < argc) {
             block_size = std::stoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--tile-rows") == 0 && i + 1 < argc) {
             tile.rows = std::stoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--tile-cols") == 0 && i + 1 < argc) {
             tile.cols = std::stoi(argv[++i]);
+        } else if (std::strcmp(argv[i], "--panel-width") == 0 &&
+                   i + 1 < argc) {
+            panel_width = std::stoi(argv[++i]);
         } else if (std::strcmp(argv[i], "--out") == 0 && i + 1 < argc) {
             out_path = argv[++i];
         } else if (std::strcmp(argv[i], "--variant") == 0 && i + 1 < argc) {
@@ -2747,21 +3384,48 @@ int run_ablation_cli(int argc, char** argv) {
     std::cout << "Running ablation harness\n"
               << "  output=" << out_path << "\n"
               << "  variant=" << variant << "\n"
-              << "  tile=" << tile.rows << "x" << tile.cols << "\n";
+              << "  tile=" << tile.rows << "x" << tile.cols << "\n"
+              << "  panel_width=" << panel_width << "\n"
+              << "  cpu_reference_max_n=" << cpu_reference_max_n << "\n";
+    if (panel_width <= 0) {
+        throw std::invalid_argument("--panel-width must be positive");
+    }
+    if (cpu_reference_max_n < 0) {
+        throw std::invalid_argument("--cpu-reference-max-n must be non-negative");
+    }
     if (m7_synthetic) {
+        if (m7_cpu_reference_max_n < 0) {
+            throw std::invalid_argument(
+                "--m7-cpu-reference-max-n must be non-negative");
+        }
         std::cout << "  mode=M7 synthetic"
                   << "  repeats=" << repeats
-                  << "  seed=" << base_seed << "\n";
+                  << "  seed=" << base_seed
+                  << "  cpu_reference_max_n=" << m7_cpu_reference_max_n
+                  << "\n";
         for (int n : n_values) {
             for (double kappa : kappa_values) {
                 for (int run_index = 0; run_index < repeats; run_index++) {
                     int seed = base_seed + 1000003 * run_index + 9973 * n +
-                               static_cast<int>(std::round(std::log10(kappa))) *
-                                   101;
+                                static_cast<int>(std::round(std::log10(kappa))) *
+                                    101;
+                    std::cerr << "M7_PHASE phase=generation status=start"
+                              << " n=" << n << " variant=" << variant
+                              << " kappa=" << kappa
+                              << " run=" << run_index << std::endl;
+                    auto generation_start = WallClock::now();
                     DenseSystem system =
                         make_conditioned_spd_system(n, kappa, seed);
+                    double generation_ms = wall_elapsed_ms(generation_start);
+                    std::cerr << "M7_PHASE phase=generation status=done"
+                              << " n=" << n << " variant=" << variant
+                              << " kappa=" << kappa
+                              << " run=" << run_index
+                              << " elapsed_ms=" << generation_ms << std::endl;
                     run_m7_synthetic_case(system, block_size, out_path, variant,
-                                          kappa, seed, run_index, tile);
+                                          kappa, seed, run_index,
+                                          n <= m7_cpu_reference_max_n,
+                                          generation_ms, tile, panel_width);
                 }
             }
         }
@@ -2773,10 +3437,11 @@ int run_ablation_cli(int argc, char** argv) {
         std::cout << "  real_matrix=" << system.name
                   << "  n=" << system.n << "\n";
         run_ablation_case_real_matrix(system, block_size, out_path, variant,
-                                      tile);
+                                      tile, panel_width);
         return 0;
     }
     for (int n : n_values) {
+        bool run_cpu_reference = n <= cpu_reference_max_n;
         if (variant == "V1") {
             run_ablation_case_v1(n, block_size, out_path);
         } else if (variant == "V2") {
@@ -2785,21 +3450,28 @@ int run_ablation_cli(int argc, char** argv) {
             run_ablation_case_v3(n, block_size, out_path);
         } else if (variant == "V3f") {
             run_ablation_case_fast_custom(
-                n, block_size, out_path, "V3f", FastUpdateKind::Global2D);
+                n, block_size, out_path, "V3f", FastUpdateKind::Global2D, {},
+                run_cpu_reference);
         } else if (variant == "V5a") {
             run_ablation_case_v5a(n, block_size, out_path, tile);
         } else if (variant == "V5af") {
             run_ablation_case_fast_custom(
                 n, block_size, out_path, "V5af", FastUpdateKind::TiledShared,
-                tile);
+                tile, run_cpu_reference);
         } else if (variant == "V5bf") {
             run_ablation_case_fast_custom(
                 n, block_size, out_path, "V5bf",
-                FastUpdateKind::TiledSharedUnrolled2, tile);
+                FastUpdateKind::TiledSharedUnrolled2, tile, run_cpu_reference);
         } else if (variant == "VLU") {
-            run_ablation_case_vlu(n, block_size, out_path);
+            run_ablation_case_vlu(n, block_size, out_path, run_cpu_reference);
+        } else if (variant == "V6a") {
+            run_ablation_case_v6a(n, block_size, out_path, panel_width,
+                                  run_cpu_reference);
+        } else if (variant == "V6b") {
+            run_ablation_case_v6a(n, block_size, out_path, panel_width,
+                                  run_cpu_reference, "V6b", true);
         } else if (variant == "V4") {
-            run_ablation_case_v4(n, block_size, out_path);
+            run_ablation_case_v4(n, block_size, out_path, run_cpu_reference);
         } else if (variant == "pilot") {
             run_ablation_case(n, block_size, out_path);
         } else {
@@ -3107,6 +3779,54 @@ TEST(GaussLUCorrectness, CustomLUMatchesKnownSolution) {
     EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
               1e-6);
     EXPECT_GT(result.elapsed_ms, 0.0);
+}
+
+TEST(GaussV6aCorrectness, PanelWidthsAndRemaindersMatchKnownSolution) {
+    const int n = 17;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    for (int panel_width : {2, 4, 8}) {
+        std::vector<float> A = to_float_vector(A_original);
+        std::vector<float> b = to_float_vector(b_original);
+        GpuSolveResult result = gauss_gpu_v6a_blocked(
+            A.data(), b.data(), n, 1e-6f, panel_width, 128);
+
+        ASSERT_TRUE(result.success) << "panel_width=" << panel_width;
+        std::vector<double> x_gpu = to_double_vector(b);
+        EXPECT_LT(relative_solution_error_l2(x_gpu, x_ref), 1e-5)
+            << "panel_width=" << panel_width;
+        EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
+                  1e-6)
+            << "panel_width=" << panel_width;
+        EXPECT_GT(result.elapsed_ms, 0.0);
+    }
+}
+
+TEST(GaussV6bCorrectness, FusedSwapMatchesKnownSolution) {
+    const int n = 17;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    for (int panel_width : {2, 4, 8}) {
+        std::vector<float> A = to_float_vector(A_original);
+        std::vector<float> b = to_float_vector(b_original);
+        GpuSolveResult result = gauss_gpu_v6b_blocked(
+            A.data(), b.data(), n, 1e-6f, panel_width, 128);
+
+        ASSERT_TRUE(result.success) << "panel_width=" << panel_width;
+        std::vector<double> x_gpu = to_double_vector(b);
+        EXPECT_LT(relative_solution_error_l2(x_gpu, x_ref), 1e-5)
+            << "panel_width=" << panel_width;
+        EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
+                  1e-6)
+            << "panel_width=" << panel_width;
+        EXPECT_GT(result.elapsed_ms, 0.0);
+    }
 }
 
 TEST(GaussV10RealMatrix, LoadsMatrixMarketAndSolvesWithV3f) {
