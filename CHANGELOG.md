@@ -69,6 +69,10 @@ All notable changes to this project are documented here. The format is based on
 - Added `V6b`, a V6a follow-up that fuses pivot checking, RHS swapping, and
   matrix row swapping into one per-pivot kernel launch to test whether reducing
   panel launch overhead improves the hybrid blocked-LU design.
+- Added `V6c`, a V6b follow-up that fuses pivot search, pivot validity
+  checking, RHS swapping, and matrix row swapping into one per-pivot kernel.
+  The variant is available in standard ablation, M7 synthetic, V10 real-matrix,
+  and energy-wrapper paths.
 - Added V6a correctness coverage across multiple panel widths, including a
   matrix size that leaves a partial final panel.
 - Added an RQ1 cross-variant pilot report comparing `V6a_b64` with `V3f`,
@@ -86,6 +90,9 @@ All notable changes to this project are documented here. The format is based on
   trailing-matrix update variants.
 - Added row-swap, singular-matrix, `n=513` multi-block, and `max |Ax-b|`
   residual validation.
+- Refreshed README limitation language to reflect the current dissertation
+  ablation state: cuSOLVER baseline, V5/V6 variants, V10, and batched energy
+  evidence are implemented, while V6c/V7/V8/V9 remain future work.
 
 ## [0.2.0-A00] — 2026-05-18
 

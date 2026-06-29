@@ -43,7 +43,7 @@ function Add-VariantArgs {
     if ($Variant -eq "V5af") {
         return $BaseArgs + @("--tile-rows", [string]$TileRows, "--tile-cols", [string]$TileCols)
     }
-    if ($Variant -eq "V6a" -or $Variant -eq "V6b") {
+    if ($Variant -eq "V6a" -or $Variant -eq "V6b" -or $Variant -eq "V6c") {
         return $BaseArgs + @("--panel-width", [string]$PanelWidth)
     }
     return $BaseArgs
