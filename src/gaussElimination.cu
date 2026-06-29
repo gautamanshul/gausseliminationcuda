@@ -3393,6 +3393,9 @@ int run_ablation_cli(int argc, char** argv) {
     if (cpu_reference_max_n < 0) {
         throw std::invalid_argument("--cpu-reference-max-n must be non-negative");
     }
+    if (repeats <= 0) {
+        throw std::invalid_argument("--repeats must be positive");
+    }
     if (m7_synthetic) {
         if (m7_cpu_reference_max_n < 0) {
             throw std::invalid_argument(
@@ -3441,42 +3444,48 @@ int run_ablation_cli(int argc, char** argv) {
         return 0;
     }
     for (int n : n_values) {
-        bool run_cpu_reference = n <= cpu_reference_max_n;
-        if (variant == "V1") {
-            run_ablation_case_v1(n, block_size, out_path);
-        } else if (variant == "V2") {
-            run_ablation_case_v2(n, block_size, out_path);
-        } else if (variant == "V3") {
-            run_ablation_case_v3(n, block_size, out_path);
-        } else if (variant == "V3f") {
-            run_ablation_case_fast_custom(
-                n, block_size, out_path, "V3f", FastUpdateKind::Global2D, {},
-                run_cpu_reference);
-        } else if (variant == "V5a") {
-            run_ablation_case_v5a(n, block_size, out_path, tile);
-        } else if (variant == "V5af") {
-            run_ablation_case_fast_custom(
-                n, block_size, out_path, "V5af", FastUpdateKind::TiledShared,
-                tile, run_cpu_reference);
-        } else if (variant == "V5bf") {
-            run_ablation_case_fast_custom(
-                n, block_size, out_path, "V5bf",
-                FastUpdateKind::TiledSharedUnrolled2, tile, run_cpu_reference);
-        } else if (variant == "VLU") {
-            run_ablation_case_vlu(n, block_size, out_path, run_cpu_reference);
-        } else if (variant == "V6a") {
-            run_ablation_case_v6a(n, block_size, out_path, panel_width,
-                                  run_cpu_reference);
-        } else if (variant == "V6b") {
-            run_ablation_case_v6a(n, block_size, out_path, panel_width,
-                                  run_cpu_reference, "V6b", true);
-        } else if (variant == "V4") {
-            run_ablation_case_v4(n, block_size, out_path, run_cpu_reference);
-        } else if (variant == "pilot") {
-            run_ablation_case(n, block_size, out_path);
-        } else {
-            std::cerr << "Unsupported ablation variant: " << variant << "\n";
-            return 2;
+        for (int run_index = 0; run_index < repeats; run_index++) {
+            bool run_cpu_reference = n <= cpu_reference_max_n;
+            if (variant == "V1") {
+                run_ablation_case_v1(n, block_size, out_path);
+            } else if (variant == "V2") {
+                run_ablation_case_v2(n, block_size, out_path);
+            } else if (variant == "V3") {
+                run_ablation_case_v3(n, block_size, out_path);
+            } else if (variant == "V3f") {
+                run_ablation_case_fast_custom(
+                    n, block_size, out_path, "V3f", FastUpdateKind::Global2D,
+                    {}, run_cpu_reference);
+            } else if (variant == "V5a") {
+                run_ablation_case_v5a(n, block_size, out_path, tile);
+            } else if (variant == "V5af") {
+                run_ablation_case_fast_custom(
+                    n, block_size, out_path, "V5af",
+                    FastUpdateKind::TiledShared, tile, run_cpu_reference);
+            } else if (variant == "V5bf") {
+                run_ablation_case_fast_custom(
+                    n, block_size, out_path, "V5bf",
+                    FastUpdateKind::TiledSharedUnrolled2, tile,
+                    run_cpu_reference);
+            } else if (variant == "VLU") {
+                run_ablation_case_vlu(n, block_size, out_path,
+                                      run_cpu_reference);
+            } else if (variant == "V6a") {
+                run_ablation_case_v6a(n, block_size, out_path, panel_width,
+                                      run_cpu_reference);
+            } else if (variant == "V6b") {
+                run_ablation_case_v6a(n, block_size, out_path, panel_width,
+                                      run_cpu_reference, "V6b", true);
+            } else if (variant == "V4") {
+                run_ablation_case_v4(n, block_size, out_path,
+                                     run_cpu_reference);
+            } else if (variant == "pilot") {
+                run_ablation_case(n, block_size, out_path);
+            } else {
+                std::cerr << "Unsupported ablation variant: " << variant
+                          << "\n";
+                return 2;
+            }
         }
     }
     return 0;

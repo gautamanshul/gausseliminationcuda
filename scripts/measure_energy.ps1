@@ -11,11 +11,16 @@ param(
     [int]$TileRows = 32,
     [int]$TileCols = 32,
     [int]$SampleMs = 50,
-    [int]$WarmupN = 512
+    [int]$WarmupN = 512,
+    [int]$CaseRepeats = 1
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+if ($CaseRepeats -le 0) {
+    throw "-CaseRepeats must be positive."
+}
 
 function Get-GpuSample {
     $line = & nvidia-smi --query-gpu=power.draw,temperature.gpu,clocks.gr,clocks.mem,utilization.gpu,utilization.memory --format=csv,noheader,nounits
@@ -56,6 +61,7 @@ function Run-BenchmarkCase {
         "--n", [string]$WarmupN,
         "--block", [string]$Block,
         "--cpu-reference-max-n", "0",
+        "--repeats", "1",
         "--out", $WarmupOutPath
     )
     $warmArgs = Add-VariantArgs -BaseArgs $warmArgs -Variant $Variant
@@ -66,6 +72,7 @@ function Run-BenchmarkCase {
         "--n", [string]$N,
         "--block", [string]$Block,
         "--cpu-reference-max-n", "0",
+        "--repeats", [string]$CaseRepeats,
         "--out", $BenchmarkOutPath
     )
     $caseArgs = Add-VariantArgs -BaseArgs $caseArgs -Variant $Variant
@@ -137,24 +144,46 @@ function Run-BenchmarkCase {
     $avgGraphicsClock = ($samples | Measure-Object -Property GraphicsClockMHz -Average).Average
     $avgMemoryClock = ($samples | Measure-Object -Property MemoryClockMHz -Average).Average
 
-    $benchRows = Import-Csv -LiteralPath $BenchmarkOutPath
-    $bench = $benchRows[-1]
-    $effectiveGflops = [double]$bench.effective_gflops
-    $gpuMs = [double]$bench.gpu_ms
-    $effectiveGflop = $effectiveGflops * ($gpuMs / 1000.0)
-    $joulesPerEffectiveGflop = if ($effectiveGflop -gt 0.0) { $energyJ / $effectiveGflop } else { "" }
+    $benchRows = @(Import-Csv -LiteralPath $BenchmarkOutPath)
+    $caseRows = @($benchRows | Select-Object -Last $CaseRepeats)
+    $bench = $caseRows[-1]
+    $gpuMsValues = @($caseRows | ForEach-Object { [double]$_.gpu_ms } | Sort-Object)
+    $gpuMid = [int]($gpuMsValues.Count / 2)
+    $medianGpuMs = if ($gpuMsValues.Count % 2) {
+        $gpuMsValues[$gpuMid]
+    } else {
+        ($gpuMsValues[$gpuMid - 1] + $gpuMsValues[$gpuMid]) / 2.0
+    }
+    $totalEffectiveGflop = 0.0
+    foreach ($caseRow in $caseRows) {
+        $totalEffectiveGflop += [double]$caseRow.effective_gflops *
+            ([double]$caseRow.gpu_ms / 1000.0)
+    }
+    $medianEffectiveGflopsValues = @($caseRows | ForEach-Object { [double]$_.effective_gflops } | Sort-Object)
+    $gflopsMid = [int]($medianEffectiveGflopsValues.Count / 2)
+    $medianEffectiveGflops = if ($medianEffectiveGflopsValues.Count % 2) {
+        $medianEffectiveGflopsValues[$gflopsMid]
+    } else {
+        ($medianEffectiveGflopsValues[$gflopsMid - 1] +
+            $medianEffectiveGflopsValues[$gflopsMid]) / 2.0
+    }
+    $joulesPerEffectiveGflop = if ($totalEffectiveGflop -gt 0.0) { $energyJ / $totalEffectiveGflop } else { "" }
 
     [pscustomobject]@{
         timestamp = (Get-Date).ToString("s")
+        variant = $Variant
         requested_variant = $Variant
         csv_variant = $bench.variant
         n = [int]$bench.n
         run_index = $RunIndex
+        case_repeats = $CaseRepeats
         sample_ms = $SampleMs
         sample_count = $samples.Count
         process_wall_ms = [Math]::Round($durationS * 1000.0, 3)
-        gpu_ms = [double]$bench.gpu_ms
-        effective_gflops = [double]$bench.effective_gflops
+        median_gpu_ms = [Math]::Round($medianGpuMs, 6)
+        total_gpu_ms = [Math]::Round((($caseRows | ForEach-Object { [double]$_.gpu_ms }) | Measure-Object -Sum).Sum, 6)
+        median_effective_gflops = [Math]::Round($medianEffectiveGflops, 6)
+        total_effective_gflop = [Math]::Round($totalEffectiveGflop, 6)
         energy_j = [Math]::Round($energyJ, 6)
         avg_power_w = [Math]::Round($avgPowerW, 6)
         max_power_w = [Math]::Round([double]$maxPowerW, 6)

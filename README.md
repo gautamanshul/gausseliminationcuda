@@ -174,6 +174,11 @@ the hybrid blocked design:
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V6b --panel-width 64 --n 500,1000 --block 512 --out results\ablation_v6b.csv
 ```
 
+Standard ablation mode accepts `--repeats` as well as M7. For each requested
+matrix size, the harness appends one CSV row per repeated solve. This is useful
+for median timing summaries and for energy wrappers that need a longer measured
+process envelope.
+
 ### V10 Real-Matrix Supplement
 
 `V10` adds an external-validity path for small real or structured matrices.
@@ -239,21 +244,27 @@ M7 CSV.
 The `scripts\measure_energy.ps1` wrapper samples NVIDIA GPU power with
 `nvidia-smi` while each benchmark process runs, then joins the integrated energy
 estimate with the ablation CSV row. It reports approximate energy-to-solution
-metrics such as `energy_j`, `avg_power_w`, `max_power_w`, and
-`joules_per_effective_gflop`.
+metrics such as `energy_j`, `avg_power_w`, `max_power_w`,
+`median_gpu_ms`, `total_gpu_ms`, `total_effective_gflop`, and
+`joules_per_effective_gflop`. Use `-CaseRepeats` to run multiple solves inside
+one measured benchmark process; this reduces process-start and short-solve
+sampling noise compared with measuring a single solve at a time.
 
 ```powershell
 .\scripts\measure_energy.ps1 `
   -Variants V4,V6a,V6b,V3f,V5af `
   -Sizes 4000,6000 `
   -Repeats 3 `
+  -CaseRepeats 3 `
   -SampleMs 50 `
   -OutPath results\energy_pilot.csv
 ```
 
 Power sampling is approximate, especially for very short runs such as cuSOLVER
-at smaller matrix sizes. Treat the energy columns as pilot evidence unless the
-run duration is long enough to collect multiple samples.
+at smaller matrix sizes. Batched measurement improves the signal, but the
+reported energy remains process-envelope energy rather than pure kernel energy.
+Treat the energy columns as pilot evidence unless the run duration is long
+enough to collect multiple samples.
 
 The historical corrected FP64 scaled-pivot solver can still be run for pilot
 comparison with:

@@ -35,6 +35,8 @@ All notable changes to this project are documented here. The format is based on
 - Added M7 condition-controlled synthetic sweep support via `--m7-synthetic`,
   including `--kappa`, `--seed`, and `--repeats` options plus an extended CSV
   schema for `kappa`, matrix family, seed, and run index.
+- Extended standard ablation mode to honor `--repeats`, appending one CSV row
+  per repeated solve for each requested matrix size.
 - Added M7 wall-clock phase instrumentation and flushed `M7_PHASE` progress
   records. V4 now separates transpose, allocation/setup, host/device copies,
   workspace setup, `getrf/getrs` wall time, and cleanup while preserving
@@ -48,6 +50,9 @@ All notable changes to this project are documented here. The format is based on
 - Added `scripts\measure_energy.ps1`, an `nvidia-smi`-based wrapper that
   samples GPU power during ablation runs and reports approximate energy,
   average/max power, and joules per effective GFLOP.
+- Added batched energy measurement support through `-CaseRepeats`, reporting
+  median solve time and total effective work across repeated solves inside one
+  measured process envelope.
 - Added uninstrumented fast custom timing variants `V3f` and `V5af` so RQ1
   custom-vs-cuSOLVER comparisons are not inflated by per-phase event
   synchronization overhead.
