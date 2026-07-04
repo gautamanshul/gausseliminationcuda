@@ -2143,6 +2143,23 @@ std::vector<double> to_double_vector(const std::vector<float>& values) {
     return out;
 }
 
+std::string resolve_repo_relative_path(const std::string& relative_path) {
+    const std::filesystem::path rel(relative_path);
+    const std::filesystem::path candidates[] = {
+        rel,
+        std::filesystem::path("..") / rel,
+        std::filesystem::path("..") / ".." / rel,
+        std::filesystem::path("..") / ".." / ".." / rel,
+    };
+
+    for (const auto& candidate : candidates) {
+        if (std::filesystem::exists(candidate)) {
+            return candidate.string();
+        }
+    }
+    return relative_path;
+}
+
 double effective_lu_gflops(int n, double ms) {
     if (ms <= 0.0) return 0.0;
     double flops = (2.0 / 3.0) * static_cast<double>(n) *
@@ -4098,7 +4115,7 @@ TEST(GaussV6dCorrectness, AdaptivePanelMatchesKnownSolution) {
 
 TEST(GaussV10RealMatrix, LoadsMatrixMarketAndSolvesWithV3f) {
     DenseSystem system = load_real_matrix_system(
-        "data/real_matrices/toy5.mtx", "toy5");
+        resolve_repo_relative_path("data/real_matrices/toy5.mtx"), "toy5");
 
     ASSERT_EQ(system.n, 5);
     ASSERT_EQ(system.A.size(), 25u);
