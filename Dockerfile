@@ -1,6 +1,6 @@
-# Reproducible build environment for the A00 Software Mini-Artifact.
-# Build: docker build -t gausselim:a00 .
-# Run:   docker run --rm --gpus all -v "$PWD/results:/app/results" gausselim:a00
+# Reproducible NVIDIA/Linux build environment for the RQ3 smoke artifact.
+# Build: docker build -t gausselim:rq3 .
+# Run:   docker run --rm --gpus all -v "$PWD/results:/app/results" gausselim:rq3
 #
 # Requires nvidia-container-toolkit on the host. Verify with:
 #   docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu22.04 nvidia-smi
@@ -36,6 +36,7 @@ RUN mkdir -p build && cd build \
     && cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
     && cmake --build . -j
 
-# The default command runs the parameterised sweep and emits results/timings.csv.
-# The plotting step is left to the host (plot.py) so the image stays minimal.
-CMD ["bash", "-lc", "cd /app && ./build/gauss_elim_bench --gtest_color=yes 2>&1 | tee results/run.log"]
+# The default command runs the RQ3 container smoke. This is a supplemental
+# Linux/NVIDIA reproducibility path; the defense baseline remains the validated
+# Windows + Visual Studio + CUDA workflow documented under dissertation_work.
+CMD ["bash", "scripts/rq3_container_smoke.sh"]

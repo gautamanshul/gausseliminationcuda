@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(gausseliminationcuda LANGUAGES CXX CUDA)
 
+find_package(CUDAToolkit REQUIRED)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
@@ -33,7 +35,8 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(gauss_elim_bench src/gaussElimination.cu)
-target_link_libraries(gauss_elim_bench PRIVATE GTest::gtest cusolver cublas)
+target_link_libraries(gauss_elim_bench PRIVATE GTest::gtest CUDA::cusolver CUDA::cublas)
+target_include_directories(gauss_elim_bench PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 
 set(GAUSS_CUDA_COMPILE_OPTIONS --expt-relaxed-constexpr)
 if(CMAKE_VERSION VERSION_LESS 3.18)

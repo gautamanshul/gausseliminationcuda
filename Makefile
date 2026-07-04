@@ -1,5 +1,5 @@
-# A00 Software Mini-Artifact convenience targets.
-# Single-command reproduction:  make reproduce
+# RQ3 reproducibility convenience targets.
+# Container smoke reproduction: make reproduce
 # Host-native build only:        make build
 # Run tests on host:             make test
 # Clean build + results:         make clean
@@ -11,27 +11,27 @@ SHELL := /bin/bash
 CUDA_ARCH ?= 75
 
 # Image tag for the Docker target.
-IMAGE_TAG ?= gausselim:a00
+IMAGE_TAG ?= gausselim:rq3
 
 .PHONY: help reproduce build test docker-build docker-run plot clean
 
 help:
 	@echo "Targets:"
-	@echo "  reproduce      Build via Docker, run the sweep, plot the figure (one-shot)"
+	@echo "  reproduce      Build via Docker and run the RQ3 container smoke"
 	@echo "  build          Host-native CMake build into ./build"
 	@echo "  test           Run GoogleTest sweep on the host (requires build)"
 	@echo "  docker-build   Build the Docker image $(IMAGE_TAG)"
-	@echo "  docker-run     Run the sweep inside Docker; outputs to ./results"
+	@echo "  docker-run     Run the RQ3 smoke inside Docker; outputs to ./results"
 	@echo "  plot           Regenerate ./results/cpu_vs_gpu_execution_time.png"
 	@echo "  clean          Remove ./build and ./results"
 	@echo ""
 	@echo "Override CUDA architecture with CUDA_ARCH (default $(CUDA_ARCH))."
 
-reproduce: results docker-build docker-run plot
+reproduce: results docker-build docker-run
 	@echo ""
-	@echo "Reproduction complete. See:"
-	@echo "  results/timings.csv"
-	@echo "  results/cpu_vs_gpu_execution_time.png"
+	@echo "RQ3 container smoke complete. See:"
+	@echo "  results/rq3_container_smoke_*.csv"
+	@echo "  results/rq3_container_smoke_*.log"
 
 build:
 	mkdir -p build

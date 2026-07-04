@@ -73,6 +73,10 @@ All notable changes to this project are documented here. The format is based on
   checking, RHS swapping, and matrix row swapping into one per-pivot kernel.
   The variant is available in standard ablation, M7 synthetic, V10 real-matrix,
   and energy-wrapper paths.
+- Added `V6d`, an adaptive blocked-LU policy variant that reuses the V6c
+  fused-panel path but chooses panel width from matrix size, available GPU
+  memory, L2 cache size, shared-memory limit, and SM count. Output labels encode
+  the selected policy decision, for example `V6d_b32` or `V6d_b128`.
 - Added V6a correctness coverage across multiple panel widths, including a
   matrix size that leaves a partial final panel.
 - Added an RQ1 cross-variant pilot report comparing `V6a_b64` with `V3f`,

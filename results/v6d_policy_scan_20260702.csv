@@ -1,0 +1,13 @@
+timestamp,variant,n,block_size,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,residual_norm2,residual_max,solution_error_norm2,solution_error_max,pivot_ms,row_swap_ms,factor_ms,update_ms,back_sub_ms,pivot_pct,row_swap_pct,factor_pct,update_pct,back_sub_pct,driver_version
+2026-07-02T00:40:26,V6c_b64,512,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,44.9956,1.9886,8.64429e-09,0.000217699,2.02025e-07,8.28683e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:26,V6c_b64,1024,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,78.24,9.14913,5.82393e-09,0.000341934,1.90978e-07,6.60549e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:26,V6c_b64,2048,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,262.072,21.8513,4.25953e-09,0.000804946,1.96022e-07,7.68564e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:27,V6c_b16,512,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,84.4022,1.06014,6.3769e-09,0.000123232,1.49186e-07,4.75368e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:27,V6c_b16,1024,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,81.2673,8.80831,5.1647e-09,0.000291375,1.69208e-07,5.658e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:28,V6c_b32,512,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,106.902,0.837016,6.215e-09,0.000131569,1.45128e-07,4.94265e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:28,V6c_b16,2048,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,362.314,15.8057,5.13143e-09,0.000805986,2.36362e-07,7.83754e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:28,V6c_b32,1024,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,103.52,6.9149,5.15904e-09,0.000333752,1.69572e-07,6.4607e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:28,V6c_b32,2048,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,237.812,24.0805,4.31634e-09,0.000713084,1.98717e-07,6.74257e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:44,V6c_b32,4096,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,669.746,68.4035,3.80192e-09,0.00224941,2.46117e-07,1.08876e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:41:01,V6c_b64,4096,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,711.371,64.401,3.39309e-09,0.00215295,2.19843e-07,1.03803e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:41:13,V6c_b128,4096,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,663.51,69.0464,3.65789e-09,0.00168089,2.36856e-07,8.14762e-07,0,0,0,0,0,0,0,0,0,0,12.8

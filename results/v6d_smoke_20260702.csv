@@ -1,0 +1,11 @@
+timestamp,variant,n,block_size,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,residual_norm2,residual_max,solution_error_norm2,solution_error_max,pivot_ms,row_swap_ms,factor_ms,update_ms,back_sub_ms,pivot_pct,row_swap_pct,factor_pct,update_pct,back_sub_pct,driver_version
+2026-07-02T00:40:06,V6c_b64,512,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,53.6413,85.8385,1.0424,8.64429e-09,0.000217699,2.02025e-07,8.28683e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:06,V6d_b16,512,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,57.3791,87.1521,1.02669,6.3769e-09,0.000123232,1.49186e-07,4.75368e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:07,V6c_b64,1024,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,706.776,111.346,6.42886,5.82393e-09,0.000341934,1.90978e-07,6.60549e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:07,V6d_b32,1024,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,710.159,120.602,5.93545,5.15904e-09,0.000333752,1.69572e-07,6.4607e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:07,V6c_b64,2048,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,369.62,15.4933,4.25953e-09,0.000804946,1.96022e-07,7.68564e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:40:07,V6d_b32,2048,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,360.903,15.8675,4.31634e-09,0.000713084,1.98717e-07,6.74257e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:42:13,V6d_b64,512,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,58.1386,1.53905,8.64429e-09,0.000217699,2.02025e-07,8.28683e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:42:13,V6d_b64,1024,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,80.1006,8.93661,5.82393e-09,0.000341934,1.90978e-07,6.60549e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:42:14,V6d_b32,2048,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,260.047,22.0215,4.31634e-09,0.000713084,1.98717e-07,6.74257e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-02T00:42:16,V6d_b128,4096,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,777.743,58.905,3.65789e-09,0.00168089,2.36856e-07,8.14762e-07,0,0,0,0,0,0,0,0,0,0,12.8

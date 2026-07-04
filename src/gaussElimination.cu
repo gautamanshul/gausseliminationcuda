@@ -813,6 +813,59 @@ static void cublas_check(cublasStatus_t result, const char* operation) {
     }
 }
 
+struct AdaptivePanelChoice {
+    int panel_width = 64;
+    size_t free_mem_bytes = 0;
+    size_t total_mem_bytes = 0;
+    int l2_cache_bytes = 0;
+    size_t shared_mem_per_block_bytes = 0;
+    int multiprocessor_count = 0;
+};
+
+static int clamp_panel_width_v6d(int panel_width, int n) {
+    if (n <= 0) {
+        throw std::invalid_argument("V6d requires n > 0");
+    }
+    return std::max(1, std::min(panel_width, n));
+}
+
+static AdaptivePanelChoice choose_adaptive_panel_width_v6d(int n) {
+    AdaptivePanelChoice choice;
+    int device = 0;
+    cudaDeviceProp props{};
+    cuda_check(cudaGetDevice(&device), "V6d cudaGetDevice");
+    cuda_check(cudaGetDeviceProperties(&props, device),
+               "V6d cudaGetDeviceProperties");
+    cuda_check(cudaMemGetInfo(&choice.free_mem_bytes,
+                              &choice.total_mem_bytes),
+               "V6d cudaMemGetInfo");
+
+    choice.l2_cache_bytes = props.l2CacheSize;
+    choice.shared_mem_per_block_bytes = props.sharedMemPerBlock;
+    choice.multiprocessor_count = props.multiProcessorCount;
+
+    const double matrix_bytes =
+        static_cast<double>(n) * static_cast<double>(n) * sizeof(float);
+    const bool memory_headroom =
+        matrix_bytes > 0.0 &&
+        static_cast<double>(choice.free_mem_bytes) >= 2.5 * matrix_bytes;
+    const bool cache_can_absorb_wider_panel =
+        choice.l2_cache_bytes >= 1024 * 1024 &&
+        choice.shared_mem_per_block_bytes >= 48 * 1024 &&
+        choice.multiprocessor_count >= 12;
+
+    int panel_width = 64;
+    if (n >= 1536 && n < 4096) {
+        panel_width = 32;
+    } else if (n >= 4096 && n < 6000 && memory_headroom &&
+               cache_can_absorb_wider_panel) {
+        panel_width = 128;
+    }
+
+    choice.panel_width = clamp_panel_width_v6d(panel_width, n);
+    return choice;
+}
+
 static GpuSolveResult gauss_gpu(double* A, double* b, int n, double tol,
                                 int block_size = 256) {
     double *d_A = nullptr, *d_b = nullptr, *d_s = nullptr;
@@ -1707,6 +1760,19 @@ static GpuSolveResult gauss_gpu_v6c_blocked(const float* A_row_major,
                                              int block_size = 256) {
     return gauss_gpu_v6a_blocked(A_row_major, b, n, tol, panel_width,
                                  block_size, true, true);
+}
+
+static GpuSolveResult gauss_gpu_v6d_adaptive_blocked(const float* A_row_major,
+                                                      float* b, int n,
+                                                      float tol,
+                                                      int block_size = 256,
+                                                      int* selected_panel_width = nullptr) {
+    AdaptivePanelChoice choice = choose_adaptive_panel_width_v6d(n);
+    if (selected_panel_width) {
+        *selected_panel_width = choice.panel_width;
+    }
+    return gauss_gpu_v6c_blocked(A_row_major, b, n, tol, choice.panel_width,
+                                 block_size);
 }
 
 static GpuSolveResult gauss_gpu_v4_cusolver(const float* A_row_major, float* b,
@@ -2910,7 +2976,8 @@ void run_ablation_case_v6a(int n, int block_size,
                             bool run_cpu_reference = true,
                             const std::string& variant_name = "V6a",
                             bool fuse_row_swap = false,
-                            bool fuse_pivot_swap = false) {
+                            bool fuse_pivot_swap = false,
+                            bool adaptive_panel = false) {
     const float tol = 1e-6f;
     std::vector<double> A_original;
     std::vector<double> b_original;
@@ -2933,12 +3000,18 @@ void run_ablation_case_v6a(int n, int block_size,
         }
     }
 
+    int effective_panel_width = panel_width;
     GpuSolveResult gpu =
-        fuse_pivot_swap
-            ? gauss_gpu_v6c_blocked(A_gpu.data(), b_gpu.data(), n, tol,
-                                    panel_width, block_size)
-            : gauss_gpu_v6a_blocked(A_gpu.data(), b_gpu.data(), n, tol,
-                                    panel_width, block_size, fuse_row_swap);
+        adaptive_panel
+            ? gauss_gpu_v6d_adaptive_blocked(
+                  A_gpu.data(), b_gpu.data(), n, tol, block_size,
+                  &effective_panel_width)
+            : (fuse_pivot_swap
+                   ? gauss_gpu_v6c_blocked(A_gpu.data(), b_gpu.data(), n, tol,
+                                           panel_width, block_size)
+                   : gauss_gpu_v6a_blocked(A_gpu.data(), b_gpu.data(), n, tol,
+                                           panel_width, block_size,
+                                           fuse_row_swap));
     if (!gpu.success) {
         throw std::runtime_error(variant_name +
                                  " blocked LU reported singular matrix");
@@ -2958,16 +3031,18 @@ void run_ablation_case_v6a(int n, int block_size,
 
     AblationRow row;
     row.timestamp = current_timestamp();
-    row.variant = variant_name + panel_suffix(panel_width);
+    row.variant = variant_name + panel_suffix(effective_panel_width);
     row.n = n;
     row.block_size = block_size;
     row.precision = "FP32";
     row.pivoting =
-        fuse_pivot_swap
-            ? "ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap"
-            : (fuse_row_swap
-                   ? "ordinary_partial_pivoting_blocked_lu_cublas_fused_swap"
-                   : "ordinary_partial_pivoting_blocked_lu_cublas");
+        adaptive_panel
+            ? "ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap"
+            : (fuse_pivot_swap
+                   ? "ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap"
+                   : (fuse_row_swap
+                          ? "ordinary_partial_pivoting_blocked_lu_cublas_fused_swap"
+                          : "ordinary_partial_pivoting_blocked_lu_cublas"));
     row.cpu_ms = cpu_ms;
     row.gpu_ms = gpu.elapsed_ms;
     row.effective_gflops = effective_lu_gflops(n, gpu.elapsed_ms);
@@ -2980,7 +3055,7 @@ void run_ablation_case_v6a(int n, int block_size,
 
     std::cout << "  variant=" << row.variant
               << "  n=" << n
-              << "  panel=" << panel_width
+              << "  panel=" << effective_panel_width
               << "  GPU=" << gpu.elapsed_ms << " ms"
               << "  GPU_wall=" << gpu.host_phases.solve_wall_ms << " ms"
               << "  GFLOP/s=" << row.effective_gflops
@@ -3209,6 +3284,19 @@ void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
             "FP32",
             "ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap",
             cpu_ms, gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V6d") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        int selected_panel_width = panel_width;
+        GpuSolveResult gpu = gauss_gpu_v6d_adaptive_blocked(
+            A_gpu.data(), b_gpu.data(), system.n, tol, block_size,
+            &selected_panel_width);
+        if (!gpu.success) throw std::runtime_error("V10 V6d GPU failed");
+        append_real_matrix_row(
+            out_path, system, "V6d" + panel_suffix(selected_panel_width),
+            block_size, "FP32",
+            "ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap",
+            cpu_ms, gpu.elapsed_ms, to_double_vector(b_gpu));
     } else {
         throw std::runtime_error("unsupported V10 variant: " + variant);
     }
@@ -3414,6 +3502,14 @@ void run_m7_synthetic_case(const DenseSystem& system,
         variant_label = "V6c" + panel_suffix(panel_width);
         pivoting =
             "ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap";
+    } else if (variant == "V6d") {
+        int selected_panel_width = panel_width;
+        gpu = gauss_gpu_v6d_adaptive_blocked(
+            A_gpu.data(), b_gpu.data(), system.n, tol, block_size,
+            &selected_panel_width);
+        variant_label = "V6d" + panel_suffix(selected_panel_width);
+        pivoting =
+            "ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap";
     } else {
         throw std::runtime_error("unsupported M7 variant: " + variant);
     }
@@ -3587,6 +3683,10 @@ int run_ablation_cli(int argc, char** argv) {
             } else if (variant == "V6c") {
                 run_ablation_case_v6a(n, block_size, out_path, panel_width,
                                       run_cpu_reference, "V6c", true, true);
+            } else if (variant == "V6d") {
+                run_ablation_case_v6a(n, block_size, out_path, panel_width,
+                                      run_cpu_reference, "V6d", true, true,
+                                      true);
             } else if (variant == "V4") {
                 run_ablation_case_v4(n, block_size, out_path,
                                      run_cpu_reference);
@@ -3971,6 +4071,29 @@ TEST(GaussV6cCorrectness, FusedPivotSwapMatchesKnownSolution) {
             << "panel_width=" << panel_width;
         EXPECT_GT(result.elapsed_ms, 0.0);
     }
+}
+
+TEST(GaussV6dCorrectness, AdaptivePanelMatchesKnownSolution) {
+    const int n = 17;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    std::vector<float> A = to_float_vector(A_original);
+    std::vector<float> b = to_float_vector(b_original);
+    int selected_panel_width = 0;
+    GpuSolveResult result = gauss_gpu_v6d_adaptive_blocked(
+        A.data(), b.data(), n, 1e-6f, 128, &selected_panel_width);
+
+    ASSERT_TRUE(result.success);
+    EXPECT_GT(selected_panel_width, 0);
+    EXPECT_LE(selected_panel_width, n);
+    std::vector<double> x_gpu = to_double_vector(b);
+    EXPECT_LT(relative_solution_error_l2(x_gpu, x_ref), 1e-5);
+    EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
+              1e-6);
+    EXPECT_GT(result.elapsed_ms, 0.0);
 }
 
 TEST(GaussV10RealMatrix, LoadsMatrixMarketAndSolvesWithV3f) {

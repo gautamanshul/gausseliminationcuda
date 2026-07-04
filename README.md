@@ -1,4 +1,4 @@
-# gausseliminationcuda
+﻿# gausseliminationcuda
 
 A reproducible CUDA implementation of Gauss elimination with partial pivoting and a parallel scaling-factor kernel, packaged with a Dockerised build, a CMake/Make harness, and a plotting script that regenerates the CPU-vs-GPU timing figure used in the A00 Research Proposal (Anshul Gautam, Harrisburg University, CISC 799-50, Summer 2026).
 
@@ -15,7 +15,12 @@ Given a randomly generated dense system `A x = b` of size *n*, this program:
 3. Validates correctness via Google Test using CPU/GPU solution agreement and the equation residual `max |Ax-b|`, both with tolerance 1e-5.
 4. Emits the timing measurements to `results/timings.csv` so the included plotting script can regenerate the timing figure.
 
-For the A00 evidence pack, the **one scenario** the rubric requires is a CPU-vs-GPU comparison sweep at *n* ∈ {500, 1000, 1500, 2000} with fixed block size 512; the **one figure** is `results/cpu_vs_gpu_execution_time.png`. Both are produced automatically by `make reproduce`.
+For the original A00 evidence pack, the **one scenario** the rubric required
+was a CPU-vs-GPU comparison sweep at *n* in `{500, 1000, 1500, 2000}` with fixed
+block size 512, and the **one figure** was
+`results/cpu_vs_gpu_execution_time.png`. The current `make reproduce` target is
+reserved for the RQ3 container smoke; regenerate the legacy plot from an
+existing `results/timings.csv` with `python plot.py results/timings.csv`.
 
 ---
 
@@ -25,12 +30,12 @@ For the A00 evidence pack, the **one scenario** the rubric requires is a CPU-vs-
 - Nvidia GTX 1650 (Turing TU117, Compute Capability 7.5, 4 GB VRAM, 896 CUDA cores)
 - Host: 8 GB+ RAM recommended at *n* = 2000
 
-**Other CUDA-capable GPUs:** Should work on any Compute Capability ≥ 6.0 (Pascal and newer). Adjust `CMAKE_CUDA_ARCHITECTURES` in `CMakeLists.txt` accordingly (75 for Turing GTX 16-series; 86 for Ampere; 89 for Ada).
+**Other CUDA-capable GPUs:** Should work on any Compute Capability â‰¥ 6.0 (Pascal and newer). Adjust `CMAKE_CUDA_ARCHITECTURES` in `CMakeLists.txt` accordingly (75 for Turing GTX 16-series; 86 for Ampere; 89 for Ada).
 
 **Software (host install):**
 - NVIDIA driver supporting CUDA 12.x
 - CUDA Toolkit 12.x (with `nvcc`)
-- CMake ≥ 3.18
+- CMake â‰¥ 3.18
 - A C++17 compiler (gcc-11 or clang-14+ on Linux; MSVC 2019+ on Windows)
 - Google Test (auto-fetched by CMake; no manual install needed)
 - Python 3.9+ with `matplotlib`, `pandas` (for the plotting script only)
@@ -41,15 +46,28 @@ For the A00 evidence pack, the **one scenario** the rubric requires is a CPU-vs-
 
 ---
 
-## Quick start — three ways to reproduce
+## Quick start â€” three ways to reproduce
 
-### 1. One-line Docker reproduce (recommended)
+### 1. RQ3 container smoke
+
+```
+docker build -t gausselim:rq3 .
+docker run --rm --gpus all -v $PWD/results:/app/results gausselim:rq3
+```
+
+Equivalent Make target:
 
 ```
 make reproduce
 ```
 
-This builds the Docker image, runs the CPU-vs-GPU sweep inside the container, copies `results/timings.csv` back to the host, and regenerates `results/cpu_vs_gpu_execution_time.png`. Expected total runtime on a GTX 1650: **< 90 seconds** (the *n* = 2000 GPU solve dominates at ~ 30 ms; rest is build + Docker overhead).
+This builds the Linux/NVIDIA container, runs focused correctness tests, executes
+the representative RQ3 smoke variants (`V3f`, `V4`, `V5af_t32x32`,
+`V6c_b64`) at `n = 512, 1024`, and validates the generated CSV. See
+`scripts/docker_reproduction_commands.md` for details. This container path is a
+supplemental reproducibility route; the validated defense baseline remains the
+Windows-native Visual Studio/CMake/CUDA workflow documented in the dissertation
+RQ3 package.
 
 ### 2. Host-native CMake build
 
@@ -62,13 +80,14 @@ cd ..
 python plot.py results/timings.csv
 ```
 
-### 3. Docker without Make
+### 3. Legacy CPU/GPU plot regeneration
 
 ```
-docker build -t gausselim:a00 .
-docker run --rm --gpus all -v $PWD/results:/app/results gausselim:a00
 python plot.py results/timings.csv
 ```
+
+This regenerates the introductory CPU-vs-GPU timing plot from an existing
+`results/timings.csv`. It is not the main RQ3 smoke artifact.
 
 ### Ablation CSV
 
@@ -186,6 +205,19 @@ showed `V6c_b64` as the fastest V6-family variant at `n=2000`, `n=4000`, and
 out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V6c --panel-width 64 --n 500,1000 --block 512 --out results\ablation_v6c.csv
 ```
 
+`V6d` adds an adaptive panel-width policy on top of the V6c fused-panel
+kernel path. Unlike V6b/V6c, which only change launch fusion, V6d changes the
+blocked-LU orchestration policy: it chooses the effective panel width from the
+matrix size, available GPU memory, L2 cache size, shared-memory limit, and SM
+count. The selected value is encoded in output labels such as `V6d_b32` or
+`V6d_b128`. This variant is intended as the first genuine algorithm-policy
+extension for post-defense journal analysis; current smoke data should be
+treated as preliminary until a repeated sweep confirms the thresholds:
+
+```powershell
+out\build\x64-Release\gauss_elim_bench.exe --ablation --variant V6d --n 512,1024,2048,4096 --block 512 --out results\ablation_v6d.csv
+```
+
 Standard ablation mode accepts `--repeats` as well as M7. For each requested
 matrix size, the harness appends one CSV row per repeated solve. This is useful
 for median timing summaries and for energy wrappers that need a longer measured
@@ -287,9 +319,10 @@ out\build\x64-Release\gauss_elim_bench.exe --ablation --variant pilot --n 500 --
 
 ---
 
-## Expected output
+## Legacy Expected Output
 
-Running `make reproduce` (or equivalent) on a GTX 1650 should produce console output similar to:
+Running the legacy CPU-vs-GPU sweep on a GTX 1650 produced console output
+similar to:
 
 ```
 [ RUN      ] GaussTest.SweepCPUvsGPU/0  (n=500,  block=512)
@@ -314,11 +347,11 @@ Wrote results/timings.csv (4 rows)
 Regenerated results/cpu_vs_gpu_execution_time.png
 ```
 
-(Exact timings will vary by ±10% depending on host load, driver version, and SM clock state.)
+(Exact timings will vary by Â±10% depending on host load, driver version, and SM clock state.)
 
 Output artifacts:
-- `results/timings.csv` — one row per (n, block_size) pair with CPU time, GPU time, residual, run timestamp, driver version
-- `results/cpu_vs_gpu_execution_time.png` — log-scale comparison plot
+- `results/timings.csv` â€” one row per (n, block_size) pair with CPU time, GPU time, residual, run timestamp, driver version
+- `results/cpu_vs_gpu_execution_time.png` â€” log-scale comparison plot
 
 ---
 
@@ -326,18 +359,18 @@ Output artifacts:
 
 ```
 gausseliminationcuda/
-├── LICENSE                    GPL-3.0
-├── README.md                  This file
-├── CHANGELOG.md               Changes from prior versions, including bug fixes
-├── Dockerfile                 nvidia/cuda:12.4.0-devel base image
-├── Makefile                   Convenience wrapper: build / test / reproduce / clean
-├── CMakeLists.txt             CMake build with GoogleTest auto-fetch
-├── plot.py                    Regenerates the CPU-vs-GPU figure from results/timings.csv
-├── src/
-│   └── gaussElimination.cu    CPU and CUDA implementations + GTest harness
-└── results/                   Output directory (created at runtime)
-    ├── timings.csv
-    └── cpu_vs_gpu_execution_time.png
+â”œâ”€â”€ LICENSE                    GPL-3.0
+â”œâ”€â”€ README.md                  This file
+â”œâ”€â”€ CHANGELOG.md               Changes from prior versions, including bug fixes
+â”œâ”€â”€ Dockerfile                 nvidia/cuda:12.4.0-devel base image
+â”œâ”€â”€ Makefile                   Convenience wrapper: build / test / reproduce / clean
+â”œâ”€â”€ CMakeLists.txt             CMake build with GoogleTest auto-fetch
+â”œâ”€â”€ plot.py                    Regenerates the CPU-vs-GPU figure from results/timings.csv
+â”œâ”€â”€ src/
+â”‚   â””â”€â”€ gaussElimination.cu    CPU and CUDA implementations + GTest harness
+â””â”€â”€ results/                   Output directory (created at runtime)
+    â”œâ”€â”€ timings.csv
+    â””â”€â”€ cpu_vs_gpu_execution_time.png
 ```
 
 ---

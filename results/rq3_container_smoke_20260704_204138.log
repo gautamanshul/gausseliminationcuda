@@ -1,0 +1,78 @@
+RQ3_CONTAINER_SMOKE start timestamp=20260704_204138
+RQ3_CONTAINER_SMOKE binary=/app/build/gauss_elim_bench
+Sat Jul  4 20:41:38 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 570.151                Driver Version: 573.22         CUDA Version: 12.8     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce GTX 1650        On  |   00000000:01:00.0 Off |                  N/A |
+| N/A   56C    P8              4W /   35W |       0MiB /   4096MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+[0;33mNote: Google Test filter = GaussFastCorrectness.*:GaussV6cCorrectness.*
+[m[0;32m[==========] [mRunning 3 tests from 2 test suites.
+[0;32m[----------] [mGlobal test environment set-up.
+[0;32m[----------] [m2 tests from GaussFastCorrectness
+[0;32m[ RUN      ] [mGaussFastCorrectness.V3fAndV5afMatchKnownSolution
+[0;32m[       OK ] [mGaussFastCorrectness.V3fAndV5afMatchKnownSolution (470 ms)
+[0;32m[ RUN      ] [mGaussFastCorrectness.V5afTunableTileShapesMatchKnownSolution
+[0;32m[       OK ] [mGaussFastCorrectness.V5afTunableTileShapesMatchKnownSolution (42 ms)
+[0;32m[----------] [m2 tests from GaussFastCorrectness (513 ms total)
+
+[0;32m[----------] [m1 test from GaussV6cCorrectness
+[0;32m[ RUN      ] [mGaussV6cCorrectness.FusedPivotSwapMatchesKnownSolution
+[0;32m[       OK ] [mGaussV6cCorrectness.FusedPivotSwapMatchesKnownSolution (93 ms)
+[0;32m[----------] [m1 test from GaussV6cCorrectness (93 ms total)
+
+[0;32m[----------] [mGlobal test environment tear-down
+[0;32m[==========] [m3 tests from 2 test suites ran. (606 ms total)
+[0;32m[  PASSED  ] [m3 tests.
+RQ3_CONTAINER_CASE variant=V3f
+Running ablation harness
+  output=results/rq3_container_smoke_20260704_204138.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=2048
+  variant=V3f  n=512  block=512  CPU=20.9536 ms  GPU=53.8335 ms  GFLOP/s=1.66213  residual_l2=2.49285e-08  solution_error_l2=5.84359e-07  cpu_gpu_l2=4.88679e-08
+  variant=V3f  n=1024  block=512  CPU=153.672 ms  GPU=119.999 ms  GFLOP/s=5.96529  residual_l2=2.44635e-08  solution_error_l2=8.06389e-07  cpu_gpu_l2=4.33644e-08
+RQ3_CONTAINER_CASE variant=V4
+Running ablation harness
+  output=results/rq3_container_smoke_20260704_204138.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=2048
+  variant=V4  n=512  block=512  CPU=20.6971 ms  GPU=24.7009 ms  GFLOP/s=3.62247  residual_l2=2.2536e-08  solution_error_l2=5.28932e-07  cpu_gpu_l2=4.28041e-07
+  variant=V4  n=1024  block=512  CPU=264.495 ms  GPU=35.9203 ms  GFLOP/s=19.9282  residual_l2=1.72247e-08  solution_error_l2=5.67137e-07  cpu_gpu_l2=7.2565e-07
+RQ3_CONTAINER_CASE variant=V5af
+Running ablation harness
+  output=results/rq3_container_smoke_20260704_204138.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=2048
+  variant=V5af_t32x32  n=512  block=512  CPU=16.7946 ms  GPU=50.5036 ms  GFLOP/s=1.77173  residual_l2=2.49285e-08  solution_error_l2=5.84359e-07  cpu_gpu_l2=4.88679e-08
+  variant=V5af_t32x32  n=1024  block=512  CPU=176.524 ms  GPU=119.223 ms  GFLOP/s=6.00413  residual_l2=2.44635e-08  solution_error_l2=8.06389e-07  cpu_gpu_l2=4.33644e-08
+RQ3_CONTAINER_CASE variant=V6c
+Running ablation harness
+  output=results/rq3_container_smoke_20260704_204138.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=2048
+  variant=V6c_b64  n=512  panel=64  GPU=47.8269 ms  GPU_wall=47.9734 ms  GFLOP/s=1.87088  residual_l2=8.64429e-09  solution_error_l2=2.02025e-07  cpu_gpu_l2=5.58318e-07
+  variant=V6c_b64  n=1024  panel=64  GPU=86.8925 ms  GPU_wall=87.0446 ms  GFLOP/s=8.23808  residual_l2=5.82393e-09  solution_error_l2=1.90978e-07  cpu_gpu_l2=7.93041e-07
+RQ3_CONTAINER_VALIDATE passed rows=8 variants=V3f,V4,V5af_t32x32,V6c_b64
+RQ3_CONTAINER_SMOKE done csv=results/rq3_container_smoke_20260704_204138.csv log=results/rq3_container_smoke_20260704_204138.log
