@@ -1,0 +1,4 @@
+timestamp,variant,n,block_size,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,residual_norm2,residual_max,solution_error_norm2,solution_error_max,pivot_ms,row_swap_ms,factor_ms,update_ms,back_sub_ms,pivot_pct,row_swap_pct,factor_pct,update_pct,back_sub_pct,driver_version
+2026-07-06T18:35:57,V6c_b64,4096,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,-1,286.808,159.734,1.19957e-08,0.00529445,7.79712e-07,2.54399e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:36:00,V5c_b64,4096,512,FP32,ordinary_partial_pivoting_blocked_lu_custom_rank_b_update,-1,537.653,85.2092,1.19957e-08,0.00529445,7.79712e-07,2.54399e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:36:02,V6e_b64,4096,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_single_panel_deferred_swaps,-1,300.087,152.666,1.19957e-08,0.00529445,7.79712e-07,2.54399e-06,0,0,0,0,0,0,0,0,0,0,12.8

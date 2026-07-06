@@ -1,0 +1,2 @@
+timestamp,variant,n,block_size,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,residual_norm2,residual_max,solution_error_norm2,solution_error_max,pivot_ms,row_swap_ms,factor_ms,update_ms,back_sub_ms,pivot_pct,row_swap_pct,factor_pct,update_pct,back_sub_pct,driver_version
+2026-07-06T18:36:23,V10_toy5_V6e_b64,5,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_single_panel_deferred_swaps,0.0048,7.11293,1.17158e-05,2.77147e-08,1.66893e-06,9.5817e-08,1.07288e-07,0,0,0,0,0,0,0,0,0,0,12.8

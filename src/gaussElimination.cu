@@ -720,10 +720,149 @@ __global__ void update_panel_v6_kernel(float* A, int n, int k,
                                         int panel_end,
                                         const int* status) {
     if (*status != 0) return;
-    int col = k + 1 + blockIdx.x * blockDim.x + threadIdx.x;
-    int row = k + 1 + blockIdx.y * blockDim.y + threadIdx.y;
+    int row = k + 1 + blockIdx.x * blockDim.x + threadIdx.x;
+    int col = k + 1 + blockIdx.y * blockDim.y + threadIdx.y;
     if (col < panel_end && row < n) {
         A[col * n + row] -= A[k * n + row] * A[col * n + k];
+    }
+}
+
+__global__ void factor_panel_v6e_kernel(float* A, float* b, int* pivots,
+                                         int n, int panel_start,
+                                         int panel_end, float tol,
+                                         int* status) {
+    if (*status != 0) return;
+
+    __shared__ float values[256];
+    __shared__ int rows[256];
+    __shared__ int pivot_row;
+    __shared__ int singular;
+
+    int tid = threadIdx.x;
+    for (int k = panel_start; k < panel_end; k++) {
+        float best_value = -1.0f;
+        int best_row = k;
+        for (int row = k + tid; row < n; row += blockDim.x) {
+            float candidate = fabsf(A[k * n + row]);
+            if (candidate > best_value ||
+                (candidate == best_value && row < best_row)) {
+                best_value = candidate;
+                best_row = row;
+            }
+        }
+        values[tid] = best_value;
+        rows[tid] = best_row;
+        __syncthreads();
+
+        for (int offset = blockDim.x / 2; offset > 0; offset /= 2) {
+            if (tid < offset) {
+                float other_value = values[tid + offset];
+                int other_row = rows[tid + offset];
+                if (other_value > values[tid] ||
+                    (other_value == values[tid] && other_row < rows[tid])) {
+                    values[tid] = other_value;
+                    rows[tid] = other_row;
+                }
+            }
+            __syncthreads();
+        }
+
+        if (tid == 0) {
+            singular = values[0] <= tol ? 1 : 0;
+            pivot_row = rows[0];
+            pivots[k] = pivot_row;
+            if (singular) {
+                *status = 1;
+            } else if (pivot_row != k) {
+                float tmp_b = b[pivot_row];
+                b[pivot_row] = b[k];
+                b[k] = tmp_b;
+            }
+        }
+        __syncthreads();
+        if (singular) return;
+
+        if (pivot_row != k) {
+            for (int col = panel_start + tid; col < panel_end;
+                 col += blockDim.x) {
+                float tmp = A[col * n + pivot_row];
+                A[col * n + pivot_row] = A[col * n + k];
+                A[col * n + k] = tmp;
+            }
+        }
+        __syncthreads();
+
+        float diag = A[k * n + k];
+        for (int row = k + 1 + tid; row < n; row += blockDim.x) {
+            A[k * n + row] /= diag;
+        }
+        __syncthreads();
+
+        for (int col = k + 1; col < panel_end; col++) {
+            float u_k_col = A[col * n + k];
+            for (int row = k + 1 + tid; row < n; row += blockDim.x) {
+                A[col * n + row] -= A[k * n + row] * u_k_col;
+            }
+            __syncthreads();
+        }
+    }
+}
+
+__global__ void apply_deferred_swaps_v6e_kernel(
+    float* A, int n, int panel_start, int panel_end, const int* pivots,
+    const int* status) {
+    if (*status != 0) return;
+    int external_index = blockIdx.x * blockDim.x + threadIdx.x;
+    int trailing_columns = n - panel_end;
+    int total_external_columns = panel_start + trailing_columns;
+    if (external_index >= total_external_columns) return;
+
+    int col = external_index < panel_start
+                  ? external_index
+                  : panel_end + (external_index - panel_start);
+    for (int k = panel_start; k < panel_end; k++) {
+        int p = pivots[k];
+        if (p != k) {
+            float tmp = A[col * n + p];
+            A[col * n + p] = A[col * n + k];
+            A[col * n + k] = tmp;
+        }
+    }
+}
+
+__global__ void rank_b_update_v5c_kernel(float* A, int n, int panel_start,
+                                          int panel_end, const int* status) {
+    if (*status != 0) return;
+
+    constexpr int TILE = 16;
+    __shared__ float l_tile[TILE][TILE];
+    __shared__ float u_tile[TILE][TILE];
+
+    int trailing = n - panel_end;
+    int row = panel_end + blockIdx.x * TILE + threadIdx.x;
+    int col = panel_end + blockIdx.y * TILE + threadIdx.y;
+    float sum = 0.0f;
+
+    for (int kk_base = panel_start; kk_base < panel_end; kk_base += TILE) {
+        int kk_l = kk_base + threadIdx.y;
+        int kk_u = kk_base + threadIdx.x;
+
+        l_tile[threadIdx.y][threadIdx.x] =
+            (row < n && kk_l < panel_end) ? A[kk_l * n + row] : 0.0f;
+        u_tile[threadIdx.x][threadIdx.y] =
+            (col < n && kk_u < panel_end) ? A[col * n + kk_u] : 0.0f;
+        __syncthreads();
+
+        int tile_width = min(TILE, panel_end - kk_base);
+        for (int t = 0; t < tile_width; t++) {
+            sum += l_tile[t][threadIdx.x] * u_tile[t][threadIdx.y];
+        }
+        __syncthreads();
+    }
+
+    if (row < n && col < n && blockIdx.x * TILE + threadIdx.x < trailing &&
+        blockIdx.y * TILE + threadIdx.y < trailing) {
+        A[col * n + row] -= sum;
     }
 }
 
@@ -1549,7 +1688,8 @@ static GpuSolveResult gauss_gpu_v6a_blocked(const float* A_row_major,
                                              int panel_width,
                                              int block_size = 256,
                                              bool fuse_row_swap = false,
-                                             bool fuse_pivot_swap = false) {
+                                             bool fuse_pivot_swap = false,
+                                             bool custom_rank_b_update = false) {
     if (panel_width <= 0) {
         throw std::invalid_argument("V6a panel width must be positive");
     }
@@ -1679,8 +1819,8 @@ static GpuSolveResult gauss_gpu_v6a_blocked(const float* A_row_major,
                 int panel_columns = panel_end - k - 1;
                 if (remaining_rows > 0 && panel_columns > 0) {
                     dim3 panel_grid(
-                        (panel_columns + panel_block.x - 1) / panel_block.x,
-                        (remaining_rows + panel_block.y - 1) / panel_block.y);
+                        (remaining_rows + panel_block.x - 1) / panel_block.x,
+                        (panel_columns + panel_block.y - 1) / panel_block.y);
                     update_panel_v6_kernel<<<panel_grid, panel_block>>>(
                         d_A, n, k, panel_end, d_status);
                     cuda_check(cudaGetLastError(),
@@ -1705,18 +1845,36 @@ static GpuSolveResult gauss_gpu_v6a_blocked(const float* A_row_major,
                     static_cast<size_t>(panel_start) * n + panel_end;
                 float* d_A22 = d_A +
                     static_cast<size_t>(panel_end) * n + panel_end;
-                cublas_check(cublasSgemm(
-                                 handle, CUBLAS_OP_N, CUBLAS_OP_N,
-                                 trailing_size, trailing_size, panel_size,
-                                 &minus_one, d_L21, n, d_U12, n, &one, d_A22,
-                                 n),
-                             "V6a cublasSgemm(A22)");
+                if (custom_rank_b_update) {
+                    dim3 rank_b_block(16, 16);
+                    dim3 rank_b_grid(
+                        (trailing_size + rank_b_block.x - 1) /
+                            rank_b_block.x,
+                        (trailing_size + rank_b_block.y - 1) /
+                            rank_b_block.y);
+                    rank_b_update_v5c_kernel<<<rank_b_grid, rank_b_block>>>(
+                        d_A, n, panel_start, panel_end, d_status);
+                    cuda_check(cudaGetLastError(),
+                               "launch rank_b_update_v5c_kernel");
+                } else {
+                    cublas_check(cublasSgemm(
+                                     handle, CUBLAS_OP_N, CUBLAS_OP_N,
+                                     trailing_size, trailing_size, panel_size,
+                                     &minus_one, d_L21, n, d_U12, n, &one,
+                                     d_A22, n),
+                                 "V6a cublasSgemm(A22)");
+                }
             }
         }
 
-        solve_lu_col_major_v6_kernel<<<1, 1>>>(d_A, d_b, n, tol, d_status);
-        cuda_check(cudaGetLastError(),
-                   "launch solve_lu_col_major_v6_kernel");
+        cublas_check(cublasStrsv(handle, CUBLAS_FILL_MODE_LOWER,
+                                 CUBLAS_OP_N, CUBLAS_DIAG_UNIT, n, d_A, n,
+                                 d_b, 1),
+                     "V6a cublasStrsv(L)");
+        cublas_check(cublasStrsv(handle, CUBLAS_FILL_MODE_UPPER,
+                                 CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, d_A, n,
+                                 d_b, 1),
+                     "V6a cublasStrsv(U)");
 
         cuda_check(cudaEventRecord(e1), "V6a cudaEventRecord(stop)");
         cuda_check(cudaEventSynchronize(e1), "CUDA V6a blocked LU solve");
@@ -1759,7 +1917,16 @@ static GpuSolveResult gauss_gpu_v6c_blocked(const float* A_row_major,
                                              int panel_width,
                                              int block_size = 256) {
     return gauss_gpu_v6a_blocked(A_row_major, b, n, tol, panel_width,
-                                 block_size, true, true);
+                                  block_size, true, true);
+}
+
+static GpuSolveResult gauss_gpu_v5c_rank_b_blocked(const float* A_row_major,
+                                                    float* b, int n,
+                                                    float tol,
+                                                    int panel_width,
+                                                    int block_size = 256) {
+    return gauss_gpu_v6a_blocked(A_row_major, b, n, tol, panel_width,
+                                  block_size, true, true, true);
 }
 
 static GpuSolveResult gauss_gpu_v6d_adaptive_blocked(const float* A_row_major,
@@ -1773,6 +1940,162 @@ static GpuSolveResult gauss_gpu_v6d_adaptive_blocked(const float* A_row_major,
     }
     return gauss_gpu_v6c_blocked(A_row_major, b, n, tol, choice.panel_width,
                                  block_size);
+}
+
+static GpuSolveResult gauss_gpu_v6e_panel_blocked(const float* A_row_major,
+                                                   float* b, int n, float tol,
+                                                   int panel_width,
+                                                   int block_size = 256) {
+    if (panel_width <= 0) {
+        throw std::invalid_argument("V6e panel width must be positive");
+    }
+    if (block_size <= 0 || block_size > 1024) {
+        throw std::invalid_argument("V6e block size must be in [1, 1024]");
+    }
+
+    cublasHandle_t handle = nullptr;
+    float* d_A = nullptr;
+    float* d_b = nullptr;
+    int* d_status = nullptr;
+    int* d_pivots = nullptr;
+    cudaEvent_t e0 = nullptr, e1 = nullptr;
+
+    auto cleanup = [&]() {
+        if (e0) cudaEventDestroy(e0);
+        if (e1) cudaEventDestroy(e1);
+        if (d_A) cudaFree(d_A);
+        if (d_b) cudaFree(d_b);
+        if (d_status) cudaFree(d_status);
+        if (d_pivots) cudaFree(d_pivots);
+        if (handle) cublasDestroy(handle);
+    };
+
+    try {
+        GpuHostPhaseTimes host_phases;
+
+        auto phase_start = WallClock::now();
+        std::vector<float> A_col_major(static_cast<size_t>(n) * n);
+        for (int row = 0; row < n; row++) {
+            for (int col = 0; col < n; col++) {
+                A_col_major[static_cast<size_t>(col) * n + row] =
+                    A_row_major[static_cast<size_t>(row) * n + col];
+            }
+        }
+        host_phases.transpose_ms = wall_elapsed_ms(phase_start);
+
+        phase_start = WallClock::now();
+        cublas_check(cublasCreate(&handle), "V6e cublasCreate");
+        cuda_check(cudaMalloc(&d_A, static_cast<size_t>(n) * n * sizeof(float)),
+                   "V6e cudaMalloc(A)");
+        cuda_check(cudaMalloc(&d_b, static_cast<size_t>(n) * sizeof(float)),
+                   "V6e cudaMalloc(b)");
+        cuda_check(cudaMalloc(&d_status, sizeof(int)),
+                   "V6e cudaMalloc(status)");
+        cuda_check(cudaMalloc(&d_pivots, static_cast<size_t>(n) * sizeof(int)),
+                   "V6e cudaMalloc(pivots)");
+        cuda_check(cudaMemset(d_status, 0, sizeof(int)),
+                   "V6e cudaMemset(status)");
+        host_phases.setup_alloc_ms = wall_elapsed_ms(phase_start);
+
+        phase_start = WallClock::now();
+        cuda_check(cudaMemcpy(d_A, A_col_major.data(),
+                              static_cast<size_t>(n) * n * sizeof(float),
+                              cudaMemcpyHostToDevice),
+                   "V6e copy A to device");
+        cuda_check(cudaMemcpy(d_b, b, static_cast<size_t>(n) * sizeof(float),
+                              cudaMemcpyHostToDevice),
+                   "V6e copy b to device");
+        host_phases.h2d_ms = wall_elapsed_ms(phase_start);
+
+        cuda_check(cudaEventCreate(&e0), "V6e cudaEventCreate(start)");
+        cuda_check(cudaEventCreate(&e1), "V6e cudaEventCreate(stop)");
+        cuda_check(cudaEventRecord(e0), "V6e cudaEventRecord(start)");
+        phase_start = WallClock::now();
+
+        constexpr int panel_threads = 256;
+        const float one = 1.0f;
+        const float minus_one = -1.0f;
+
+        for (int panel_start = 0; panel_start < n;
+             panel_start += panel_width) {
+            int panel_end = std::min(n, panel_start + panel_width);
+            int panel_size = panel_end - panel_start;
+
+            factor_panel_v6e_kernel<<<1, panel_threads>>>(
+                d_A, d_b, d_pivots, n, panel_start, panel_end, tol, d_status);
+            cuda_check(cudaGetLastError(), "launch factor_panel_v6e_kernel");
+
+            int external_columns = panel_start + (n - panel_end);
+            if (external_columns > 0) {
+                int swap_grid =
+                    (external_columns + block_size - 1) / block_size;
+                apply_deferred_swaps_v6e_kernel<<<swap_grid, block_size>>>(
+                    d_A, n, panel_start, panel_end, d_pivots, d_status);
+                cuda_check(cudaGetLastError(),
+                           "launch apply_deferred_swaps_v6e_kernel");
+            }
+
+            int trailing_size = n - panel_end;
+            if (trailing_size > 0) {
+                float* d_L11 = d_A +
+                    static_cast<size_t>(panel_start) * n + panel_start;
+                float* d_U12 = d_A +
+                    static_cast<size_t>(panel_end) * n + panel_start;
+                cublas_check(cublasStrsm(
+                                 handle, CUBLAS_SIDE_LEFT,
+                                 CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N,
+                                 CUBLAS_DIAG_UNIT, panel_size, trailing_size,
+                                 &one, d_L11, n, d_U12, n),
+                             "V6e cublasStrsm(U12)");
+
+                float* d_L21 = d_A +
+                    static_cast<size_t>(panel_start) * n + panel_end;
+                float* d_A22 = d_A +
+                    static_cast<size_t>(panel_end) * n + panel_end;
+                cublas_check(cublasSgemm(
+                                 handle, CUBLAS_OP_N, CUBLAS_OP_N,
+                                 trailing_size, trailing_size, panel_size,
+                                 &minus_one, d_L21, n, d_U12, n, &one, d_A22,
+                                 n),
+                             "V6e cublasSgemm(A22)");
+            }
+        }
+
+        cublas_check(cublasStrsv(handle, CUBLAS_FILL_MODE_LOWER,
+                                 CUBLAS_OP_N, CUBLAS_DIAG_UNIT, n, d_A, n,
+                                 d_b, 1),
+                     "V6e cublasStrsv(L)");
+        cublas_check(cublasStrsv(handle, CUBLAS_FILL_MODE_UPPER,
+                                 CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT, n, d_A, n,
+                                 d_b, 1),
+                     "V6e cublasStrsv(U)");
+
+        cuda_check(cudaEventRecord(e1), "V6e cudaEventRecord(stop)");
+        cuda_check(cudaEventSynchronize(e1), "CUDA V6e blocked LU solve");
+        host_phases.solve_wall_ms = wall_elapsed_ms(phase_start);
+
+        float ms = 0.0f;
+        cuda_check(cudaEventElapsedTime(&ms, e0, e1),
+                   "V6e cudaEventElapsedTime");
+
+        phase_start = WallClock::now();
+        int status = 0;
+        cuda_check(cudaMemcpy(&status, d_status, sizeof(int),
+                              cudaMemcpyDeviceToHost),
+                   "V6e copy status to host");
+        cuda_check(cudaMemcpy(b, d_b, static_cast<size_t>(n) * sizeof(float),
+                              cudaMemcpyDeviceToHost),
+                   "V6e copy x to host");
+        host_phases.d2h_ms = wall_elapsed_ms(phase_start);
+
+        phase_start = WallClock::now();
+        cleanup();
+        host_phases.cleanup_ms = wall_elapsed_ms(phase_start);
+        return {static_cast<double>(ms), status == 0, host_phases};
+    } catch (...) {
+        cleanup();
+        throw;
+    }
 }
 
 static GpuSolveResult gauss_gpu_v4_cusolver(const float* A_row_major, float* b,
@@ -2994,7 +3317,9 @@ void run_ablation_case_v6a(int n, int block_size,
                             const std::string& variant_name = "V6a",
                             bool fuse_row_swap = false,
                             bool fuse_pivot_swap = false,
-                            bool adaptive_panel = false) {
+                            bool adaptive_panel = false,
+                            bool custom_rank_b_update = false,
+                            bool single_panel_factor = false) {
     const float tol = 1e-6f;
     std::vector<double> A_original;
     std::vector<double> b_original;
@@ -3019,10 +3344,16 @@ void run_ablation_case_v6a(int n, int block_size,
 
     int effective_panel_width = panel_width;
     GpuSolveResult gpu =
-        adaptive_panel
+        single_panel_factor
+            ? gauss_gpu_v6e_panel_blocked(A_gpu.data(), b_gpu.data(), n, tol,
+                                          panel_width, block_size)
+        : adaptive_panel
             ? gauss_gpu_v6d_adaptive_blocked(
                   A_gpu.data(), b_gpu.data(), n, tol, block_size,
                   &effective_panel_width)
+        : custom_rank_b_update
+            ? gauss_gpu_v5c_rank_b_blocked(A_gpu.data(), b_gpu.data(), n, tol,
+                                           panel_width, block_size)
             : (fuse_pivot_swap
                    ? gauss_gpu_v6c_blocked(A_gpu.data(), b_gpu.data(), n, tol,
                                            panel_width, block_size)
@@ -3053,8 +3384,12 @@ void run_ablation_case_v6a(int n, int block_size,
     row.block_size = block_size;
     row.precision = "FP32";
     row.pivoting =
-        adaptive_panel
+        single_panel_factor
+            ? "ordinary_partial_pivoting_blocked_lu_cublas_single_panel_deferred_swaps"
+        : adaptive_panel
             ? "ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap"
+        : custom_rank_b_update
+            ? "ordinary_partial_pivoting_blocked_lu_custom_rank_b_update"
             : (fuse_pivot_swap
                    ? "ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap"
                    : (fuse_row_swap
@@ -3301,6 +3636,29 @@ void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
             "FP32",
             "ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap",
             cpu_ms, gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V5c") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_v5c_rank_b_blocked(
+            A_gpu.data(), b_gpu.data(), system.n, tol, panel_width,
+            block_size);
+        if (!gpu.success) throw std::runtime_error("V10 V5c GPU failed");
+        append_real_matrix_row(
+            out_path, system, "V5c" + panel_suffix(panel_width), block_size,
+            "FP32", "ordinary_partial_pivoting_blocked_lu_custom_rank_b_update",
+            cpu_ms, gpu.elapsed_ms, to_double_vector(b_gpu));
+    } else if (variant == "V6e") {
+        std::vector<float> A_gpu = to_float_vector(system.A);
+        std::vector<float> b_gpu = to_float_vector(system.b);
+        GpuSolveResult gpu = gauss_gpu_v6e_panel_blocked(
+            A_gpu.data(), b_gpu.data(), system.n, tol, panel_width,
+            block_size);
+        if (!gpu.success) throw std::runtime_error("V10 V6e GPU failed");
+        append_real_matrix_row(
+            out_path, system, "V6e" + panel_suffix(panel_width), block_size,
+            "FP32",
+            "ordinary_partial_pivoting_blocked_lu_cublas_single_panel_deferred_swaps",
+            cpu_ms, gpu.elapsed_ms, to_double_vector(b_gpu));
     } else if (variant == "V6d") {
         std::vector<float> A_gpu = to_float_vector(system.A);
         std::vector<float> b_gpu = to_float_vector(system.b);
@@ -3519,6 +3877,19 @@ void run_m7_synthetic_case(const DenseSystem& system,
         variant_label = "V6c" + panel_suffix(panel_width);
         pivoting =
             "ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap";
+    } else if (variant == "V5c") {
+        gpu = gauss_gpu_v5c_rank_b_blocked(
+            A_gpu.data(), b_gpu.data(), system.n, tol, panel_width,
+            block_size);
+        variant_label = "V5c" + panel_suffix(panel_width);
+        pivoting = "ordinary_partial_pivoting_blocked_lu_custom_rank_b_update";
+    } else if (variant == "V6e") {
+        gpu = gauss_gpu_v6e_panel_blocked(A_gpu.data(), b_gpu.data(),
+                                          system.n, tol, panel_width,
+                                          block_size);
+        variant_label = "V6e" + panel_suffix(panel_width);
+        pivoting =
+            "ordinary_partial_pivoting_blocked_lu_cublas_single_panel_deferred_swaps";
     } else if (variant == "V6d") {
         int selected_panel_width = panel_width;
         gpu = gauss_gpu_v6d_adaptive_blocked(
@@ -3700,6 +4071,14 @@ int run_ablation_cli(int argc, char** argv) {
             } else if (variant == "V6c") {
                 run_ablation_case_v6a(n, block_size, out_path, panel_width,
                                       run_cpu_reference, "V6c", true, true);
+            } else if (variant == "V5c") {
+                run_ablation_case_v6a(n, block_size, out_path, panel_width,
+                                      run_cpu_reference, "V5c", true, true,
+                                      false, true);
+            } else if (variant == "V6e") {
+                run_ablation_case_v6a(n, block_size, out_path, panel_width,
+                                      run_cpu_reference, "V6e", true, true,
+                                      false, false, true);
             } else if (variant == "V6d") {
                 run_ablation_case_v6a(n, block_size, out_path, panel_width,
                                       run_cpu_reference, "V6d", true, true,
@@ -4111,6 +4490,54 @@ TEST(GaussV6dCorrectness, AdaptivePanelMatchesKnownSolution) {
     EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
               1e-6);
     EXPECT_GT(result.elapsed_ms, 0.0);
+}
+
+TEST(GaussV5cCorrectness, CustomRankBUpdateMatchesKnownSolution) {
+    const int n = 17;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    for (int panel_width : {2, 4, 8}) {
+        std::vector<float> A = to_float_vector(A_original);
+        std::vector<float> b = to_float_vector(b_original);
+        GpuSolveResult result = gauss_gpu_v5c_rank_b_blocked(
+            A.data(), b.data(), n, 1e-6f, panel_width, 128);
+
+        ASSERT_TRUE(result.success) << "panel_width=" << panel_width;
+        std::vector<double> x_gpu = to_double_vector(b);
+        EXPECT_LT(relative_solution_error_l2(x_gpu, x_ref), 1e-5)
+            << "panel_width=" << panel_width;
+        EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
+                  1e-6)
+            << "panel_width=" << panel_width;
+        EXPECT_GT(result.elapsed_ms, 0.0);
+    }
+}
+
+TEST(GaussV6eCorrectness, SinglePanelDeferredSwapsMatchKnownSolution) {
+    const int n = 17;
+    std::vector<double> A_original;
+    std::vector<double> b_original;
+    std::vector<double> x_ref;
+    make_known_solution_system(n, A_original, b_original, x_ref);
+
+    for (int panel_width : {2, 4, 8}) {
+        std::vector<float> A = to_float_vector(A_original);
+        std::vector<float> b = to_float_vector(b_original);
+        GpuSolveResult result = gauss_gpu_v6e_panel_blocked(
+            A.data(), b.data(), n, 1e-6f, panel_width, 128);
+
+        ASSERT_TRUE(result.success) << "panel_width=" << panel_width;
+        std::vector<double> x_gpu = to_double_vector(b);
+        EXPECT_LT(relative_solution_error_l2(x_gpu, x_ref), 1e-5)
+            << "panel_width=" << panel_width;
+        EXPECT_LT(normalized_residual_l2(A_original, b_original, x_gpu, n),
+                  1e-6)
+            << "panel_width=" << panel_width;
+        EXPECT_GT(result.elapsed_ms, 0.0);
+    }
 }
 
 TEST(GaussV10RealMatrix, LoadsMatrixMarketAndSolvesWithV3f) {

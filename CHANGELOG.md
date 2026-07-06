@@ -6,6 +6,26 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Added
+- Implemented P4/P5/P6 post-review variants. `V6e` adds a single-kernel panel
+  factorization path with deferred panel-external row swaps, while `V5c` adds a
+  custom shared-memory tiled rank-b trailing-update kernel for comparison
+  against the V6 cuBLAS `SGEMM` path.
+- Added correctness coverage and CLI/M7/V10 dispatch for `V5c` and `V6e`.
+  Initial smoke evidence shows both variants preserve FP32 correctness. In the
+  single-run `n=4096` comparison, `V6c_b64` measured `286.808 ms`, `V6e_b64`
+  measured `300.087 ms`, and `V5c_b64` measured `537.653 ms`, showing that
+  `V6e` is structurally close to the current V6c endpoint while the simple
+  custom rank-b update does not beat cuBLAS `SGEMM`.
+- Implemented post-review V6 refinements P1 and P2. `update_panel_v6_kernel`
+  now maps `threadIdx.x` to contiguous rows in column-major storage, improving
+  memory coalescing for the in-panel update. The V6 final solve now uses
+  cuBLAS `Strsv` lower/upper triangular vector solves instead of the previous
+  one-thread CUDA solve kernel.
+- Completed P3 Nsight Systems profiling for `V6c_b64` at `n=4096` after the
+  P1/P2 fixes. The unprofiled timing run reports `367.104 ms`, `124.796`
+  effective GFLOP/s, residual 2-norm `1.19957e-08`, and solution-error 2-norm
+  `7.79712e-07`. The profile shows the final `TRSV` solve is no longer a major
+  cost, while panel-side launches and SGEMM dominate the remaining V6c budget.
 - Added an `--ablation` command-line mode that writes a dissertation-oriented
   CSV with variant label, matrix size, block size, precision, pivoting policy,
   CPU/GPU timings, effective GFLOP/s, normalized residual, max residual,
