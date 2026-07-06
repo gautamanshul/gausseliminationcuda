@@ -1,0 +1,10 @@
+timestamp,variant,n,block_size,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,residual_norm2,residual_max,solution_error_norm2,solution_error_max,pivot_ms,row_swap_ms,factor_ms,update_ms,back_sub_ms,pivot_pct,row_swap_pct,factor_pct,update_pct,back_sub_pct,driver_version
+2026-07-06T18:56:27,V6d_b32,2000,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,150.815,35.3635,1.20803e-08,0.00152742,5.52197e-07,1.47516e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:56:27,V6d_b32,2000,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,180.623,29.5275,1.20803e-08,0.00152742,5.52197e-07,1.47516e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:56:28,V6d_b32,2000,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,181.482,29.3877,1.20803e-08,0.00152742,5.52197e-07,1.47516e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:56:29,V6d_b32,4000,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,353.062,120.848,1.19693e-08,0.00414041,7.6928e-07,2.12722e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:56:31,V6d_b32,4000,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,274.087,155.668,1.19693e-08,0.00414041,7.6928e-07,2.12722e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:56:32,V6d_b32,4000,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,265.511,160.697,1.19693e-08,0.00414041,7.6928e-07,2.12722e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:56:36,V6d_b64,6000,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,612.743,235.009,1.34347e-08,0.00909099,1.05379e-06,3.01783e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:56:39,V6d_b64,6000,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,547.749,262.894,1.34347e-08,0.00909099,1.05379e-06,3.01783e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-07-06T18:56:42,V6d_b64,6000,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_adaptive_panel_fused_pivot_swap,-1,615.386,233.999,1.34347e-08,0.00909099,1.05379e-06,3.01783e-06,0,0,0,0,0,0,0,0,0,0,12.8
