@@ -48,6 +48,9 @@ void __syncthreads();
 #include <sstream>
 #include <vector>
 
+static constexpr int kPivotThreads = 256;
+static constexpr int kSwapThreads = 256;
+
 using std::abs;
 
 // ----------------------------------------------------------------------------
@@ -282,39 +285,68 @@ __global__ void pivot_and_swap_v1_kernel(float* A, float* b, int n, int k,
 __global__ void find_pivot_v2_kernel(const float* A, int n, int k, int* pivot,
                                      float* pivot_abs,
                                      const int* status) {
-    if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
+    if (blockIdx.x != 0 || *status != 0) return;
 
+    __shared__ float values[256];
+    __shared__ int rows[256];
+    int tid = threadIdx.x;
+    float best_value = -1.0f;
     int best_row = k;
-    float largest = fabsf(A[k * n + k]);
-    for (int i = k + 1; i < n; i++) {
-        float candidate = fabsf(A[i * n + k]);
-        if (candidate > largest) {
-            largest = candidate;
-            best_row = i;
+
+    for (int row = k + tid; row < n; row += blockDim.x) {
+        float candidate = fabsf(A[row * n + k]);
+        if (candidate > best_value ||
+            (candidate == best_value && row < best_row)) {
+            best_value = candidate;
+            best_row = row;
         }
     }
-    *pivot = best_row;
-    *pivot_abs = largest;
+
+    values[tid] = best_value;
+    rows[tid] = best_row;
+    __syncthreads();
+
+    for (int offset = blockDim.x / 2; offset > 0; offset /= 2) {
+        if (tid < offset) {
+            float other_value = values[tid + offset];
+            int other_row = rows[tid + offset];
+            if (other_value > values[tid] ||
+                (other_value == values[tid] && other_row < rows[tid])) {
+                values[tid] = other_value;
+                rows[tid] = other_row;
+            }
+        }
+        __syncthreads();
+    }
+
+    if (tid == 0) {
+        *pivot = rows[0];
+        *pivot_abs = values[0];
+    }
 }
 
 __global__ void swap_and_check_v2_kernel(float* A, float* b, int n, int k,
                                          float tol, const int* pivot,
                                          const float* pivot_abs,
                                          int* status) {
-    if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
+    if (*status != 0) return;
 
     if (*pivot_abs <= tol) {
-        *status = 1;
+        if (blockIdx.x == 0 && threadIdx.x == 0) *status = 1;
         return;
     }
 
     int p = *pivot;
-    if (p != k) {
-        for (int j = 0; j < n; j++) {
-            float tmp = A[p * n + j];
-            A[p * n + j] = A[k * n + j];
-            A[k * n + j] = tmp;
-        }
+    if (p == k) return;
+
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (col < n) {
+        float tmp = A[p * n + col];
+        A[p * n + col] = A[k * n + col];
+        A[k * n + col] = tmp;
+    }
+
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
         float tmp = b[p];
         b[p] = b[k];
         b[k] = tmp;
@@ -325,21 +357,22 @@ __global__ void swap_and_check_lu_kernel(float* A, int* pivots, int n, int k,
                                          float tol, const int* pivot,
                                          const float* pivot_abs,
                                          int* status) {
-    if (blockIdx.x != 0 || threadIdx.x != 0 || *status != 0) return;
+    if (*status != 0) return;
 
     if (*pivot_abs <= tol) {
-        *status = 1;
+        if (blockIdx.x == 0 && threadIdx.x == 0) *status = 1;
         return;
     }
 
     int p = *pivot;
-    pivots[k] = p;
-    if (p != k) {
-        for (int j = 0; j < n; j++) {
-            float tmp = A[p * n + j];
-            A[p * n + j] = A[k * n + j];
-            A[k * n + j] = tmp;
-        }
+    if (blockIdx.x == 0 && threadIdx.x == 0) pivots[k] = p;
+    if (p == k) return;
+
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (col < n) {
+        float tmp = A[p * n + col];
+        A[p * n + col] = A[k * n + col];
+        A[k * n + col] = tmp;
     }
 }
 
@@ -1213,14 +1246,14 @@ static GpuSolveTimedResult gauss_gpu_v2(float* A, float* b, int n, float tol,
         double total_ms = 0.0;
 
         for (int k = 0; k < n - 1; k++) {
-            find_pivot_v2_kernel<<<1, 1>>>(d_A, n, k, d_pivot, d_pivot_abs,
+            find_pivot_v2_kernel<<<1, kPivotThreads>>>(d_A, n, k, d_pivot, d_pivot_abs,
                                            d_status);
             cuda_check(cudaGetLastError(), "launch find_pivot_v2_kernel");
             float phase = time_last_cuda_phase(e0, e_phase, "time pivot phase");
             phases.pivot_ms += phase;
             total_ms += phase;
 
-            swap_and_check_v2_kernel<<<1, 1>>>(d_A, d_b, n, k, tol, d_pivot,
+            swap_and_check_v2_kernel<<<(n + kSwapThreads - 1) / kSwapThreads, kSwapThreads>>>(d_A, d_b, n, k, tol, d_pivot,
                                                d_pivot_abs, d_status);
             cuda_check(cudaGetLastError(), "launch swap_and_check_v2_kernel");
             phase = time_last_cuda_phase(e0, e_phase, "time row-swap phase");
@@ -1309,14 +1342,14 @@ static GpuSolveTimedResult gauss_gpu_v3(float* A, float* b, int n, float tol,
         double total_ms = 0.0;
 
         for (int k = 0; k < n - 1; k++) {
-            find_pivot_v2_kernel<<<1, 1>>>(d_A, n, k, d_pivot, d_pivot_abs,
+            find_pivot_v2_kernel<<<1, kPivotThreads>>>(d_A, n, k, d_pivot, d_pivot_abs,
                                            d_status);
             cuda_check(cudaGetLastError(), "launch find_pivot_v2_kernel");
             float phase = time_last_cuda_phase(e0, e_phase, "time pivot phase");
             phases.pivot_ms += phase;
             total_ms += phase;
 
-            swap_and_check_v2_kernel<<<1, 1>>>(d_A, d_b, n, k, tol, d_pivot,
+            swap_and_check_v2_kernel<<<(n + kSwapThreads - 1) / kSwapThreads, kSwapThreads>>>(d_A, d_b, n, k, tol, d_pivot,
                                                d_pivot_abs, d_status);
             cuda_check(cudaGetLastError(), "launch swap_and_check_v2_kernel");
             phase = time_last_cuda_phase(e0, e_phase, "time row-swap phase");
@@ -1410,14 +1443,14 @@ static GpuSolveTimedResult gauss_gpu_v5a(float* A, float* b, int n, float tol,
         double total_ms = 0.0;
 
         for (int k = 0; k < n - 1; k++) {
-            find_pivot_v2_kernel<<<1, 1>>>(d_A, n, k, d_pivot, d_pivot_abs,
+            find_pivot_v2_kernel<<<1, kPivotThreads>>>(d_A, n, k, d_pivot, d_pivot_abs,
                                            d_status);
             cuda_check(cudaGetLastError(), "launch find_pivot_v2_kernel");
             float phase = time_last_cuda_phase(e0, e_phase, "time pivot phase");
             phases.pivot_ms += phase;
             total_ms += phase;
 
-            swap_and_check_v2_kernel<<<1, 1>>>(d_A, d_b, n, k, tol, d_pivot,
+            swap_and_check_v2_kernel<<<(n + kSwapThreads - 1) / kSwapThreads, kSwapThreads>>>(d_A, d_b, n, k, tol, d_pivot,
                                                d_pivot_abs, d_status);
             cuda_check(cudaGetLastError(), "launch swap_and_check_v2_kernel");
             phase = time_last_cuda_phase(e0, e_phase, "time row-swap phase");
@@ -1519,11 +1552,11 @@ static GpuSolveResult gauss_gpu_fast_custom(float* A, float* b, int n,
         cuda_check(cudaEventRecord(e0), "cudaEventRecord(start)");
 
         for (int k = 0; k < n - 1; k++) {
-            find_pivot_v2_kernel<<<1, 1>>>(d_A, n, k, d_pivot, d_pivot_abs,
+            find_pivot_v2_kernel<<<1, kPivotThreads>>>(d_A, n, k, d_pivot, d_pivot_abs,
                                            d_status);
             cuda_check(cudaGetLastError(), "launch find_pivot_v2_kernel");
 
-            swap_and_check_v2_kernel<<<1, 1>>>(d_A, d_b, n, k, tol, d_pivot,
+            swap_and_check_v2_kernel<<<(n + kSwapThreads - 1) / kSwapThreads, kSwapThreads>>>(d_A, d_b, n, k, tol, d_pivot,
                                                d_pivot_abs, d_status);
             cuda_check(cudaGetLastError(), "launch swap_and_check_v2_kernel");
 
@@ -1635,11 +1668,11 @@ static GpuSolveResult gauss_gpu_lu_custom(float* A, float* b, int n,
         cuda_check(cudaEventRecord(e0), "cudaEventRecord(start)");
 
         for (int k = 0; k < n - 1; k++) {
-            find_pivot_v2_kernel<<<1, 1>>>(d_A, n, k, d_pivot, d_pivot_abs,
+            find_pivot_v2_kernel<<<1, kPivotThreads>>>(d_A, n, k, d_pivot, d_pivot_abs,
                                            d_status);
             cuda_check(cudaGetLastError(), "launch find_pivot_v2_kernel");
 
-            swap_and_check_lu_kernel<<<1, 1>>>(d_A, d_pivots, n, k, tol,
+            swap_and_check_lu_kernel<<<(n + kSwapThreads - 1) / kSwapThreads, kSwapThreads>>>(d_A, d_pivots, n, k, tol,
                                                d_pivot, d_pivot_abs, d_status);
             cuda_check(cudaGetLastError(), "launch swap_and_check_lu_kernel");
 
@@ -2964,7 +2997,7 @@ void run_ablation_case_v2(int n, int block_size, const std::string& out_path) {
     row.n = n;
     row.block_size = block_size;
     row.precision = "FP32";
-    row.pivoting = "ordinary_partial_pivoting";
+    row.pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
     row.cpu_ms = cpu_ms;
     row.gpu_ms = gpu.elapsed_ms;
     row.effective_gflops = effective_lu_gflops(n, gpu.elapsed_ms);
@@ -3043,7 +3076,7 @@ void run_ablation_case_v3(int n, int block_size, const std::string& out_path) {
     row.n = n;
     row.block_size = block_size;
     row.precision = "FP32";
-    row.pivoting = "ordinary_partial_pivoting";
+    row.pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
     row.cpu_ms = cpu_ms;
     row.gpu_ms = gpu.elapsed_ms;
     row.effective_gflops = effective_lu_gflops(n, gpu.elapsed_ms);
@@ -3123,7 +3156,7 @@ void run_ablation_case_v5a(int n, int block_size, const std::string& out_path,
     row.n = n;
     row.block_size = block_size;
     row.precision = "FP32";
-    row.pivoting = "ordinary_partial_pivoting";
+    row.pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
     row.cpu_ms = cpu_ms;
     row.gpu_ms = gpu.elapsed_ms;
     row.effective_gflops = effective_lu_gflops(n, gpu.elapsed_ms);
@@ -3217,7 +3250,7 @@ void run_ablation_case_fast_custom(int n, int block_size,
     row.n = n;
     row.block_size = block_size;
     row.precision = "FP32";
-    row.pivoting = "ordinary_partial_pivoting";
+    row.pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
     row.cpu_ms = cpu_ms;
     row.gpu_ms = gpu.elapsed_ms;
     row.effective_gflops = effective_lu_gflops(n, gpu.elapsed_ms);
@@ -3289,7 +3322,7 @@ void run_ablation_case_vlu(int n, int block_size,
     row.n = n;
     row.block_size = block_size;
     row.precision = "FP32";
-    row.pivoting = "ordinary_partial_pivoting_custom_lu";
+    row.pivoting = "ordinary_partial_pivoting_custom_lu_parallel_pivot_swap";
     row.cpu_ms = cpu_ms;
     row.gpu_ms = gpu.elapsed_ms;
     row.effective_gflops = effective_lu_gflops(n, gpu.elapsed_ms);
@@ -3559,7 +3592,7 @@ void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
             block_size, tile);
         if (!gpu.success) throw std::runtime_error("V10 V3f GPU failed");
         append_real_matrix_row(out_path, system, "V3f", block_size, "FP32",
-                               "ordinary_partial_pivoting", cpu_ms,
+                               "ordinary_partial_pivoting_parallel_pivot_swap", cpu_ms,
                                gpu.elapsed_ms, to_double_vector(b_gpu));
     } else if (variant == "V4") {
         std::vector<float> A_gpu = to_float_vector(system.A);
@@ -3579,7 +3612,7 @@ void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
         if (!gpu.success) throw std::runtime_error("V10 V5af GPU failed");
         append_real_matrix_row(out_path, system, "V5af" + tile_suffix(tile),
                                block_size, "FP32",
-                               "ordinary_partial_pivoting", cpu_ms,
+                               "ordinary_partial_pivoting_parallel_pivot_swap", cpu_ms,
                                gpu.elapsed_ms, to_double_vector(b_gpu));
     } else if (variant == "V5bf") {
         std::vector<float> A_gpu = to_float_vector(system.A);
@@ -3590,7 +3623,7 @@ void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
         if (!gpu.success) throw std::runtime_error("V10 V5bf GPU failed");
         append_real_matrix_row(out_path, system, "V5bf" + tile_suffix(tile),
                                block_size, "FP32",
-                               "ordinary_partial_pivoting", cpu_ms,
+                               "ordinary_partial_pivoting_parallel_pivot_swap", cpu_ms,
                                gpu.elapsed_ms, to_double_vector(b_gpu));
     } else if (variant == "VLU") {
         std::vector<float> A_gpu = to_float_vector(system.A);
@@ -3600,7 +3633,7 @@ void run_ablation_case_real_matrix(const DenseSystem& system, int block_size,
                                 block_size);
         if (!gpu.success) throw std::runtime_error("V10 VLU GPU failed");
         append_real_matrix_row(out_path, system, "VLU", block_size, "FP32",
-                               "ordinary_partial_pivoting_custom_lu", cpu_ms,
+                               "ordinary_partial_pivoting_custom_lu_parallel_pivot_swap", cpu_ms,
                                gpu.elapsed_ms, to_double_vector(b_gpu));
     } else if (variant == "V6a") {
         std::vector<float> A_gpu = to_float_vector(system.A);
@@ -3839,7 +3872,7 @@ void run_m7_synthetic_case(const DenseSystem& system,
             A_gpu.data(), b_gpu.data(), system.n, tol, FastUpdateKind::Global2D,
             block_size, tile);
         variant_label = "V3f";
-        pivoting = "ordinary_partial_pivoting";
+        pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
     } else if (variant == "V4") {
         gpu = gauss_gpu_v4_cusolver(A_gpu.data(), b_gpu.data(), system.n);
         variant_label = "V4";
@@ -3849,18 +3882,18 @@ void run_m7_synthetic_case(const DenseSystem& system,
             A_gpu.data(), b_gpu.data(), system.n, tol,
             FastUpdateKind::TiledShared, block_size, tile);
         variant_label = "V5af" + tile_suffix(tile);
-        pivoting = "ordinary_partial_pivoting";
+        pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
     } else if (variant == "V5bf") {
         gpu = gauss_gpu_fast_custom(
             A_gpu.data(), b_gpu.data(), system.n, tol,
             FastUpdateKind::TiledSharedUnrolled2, block_size, tile);
         variant_label = "V5bf" + tile_suffix(tile);
-        pivoting = "ordinary_partial_pivoting";
+        pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
     } else if (variant == "VLU") {
         gpu = gauss_gpu_lu_custom(A_gpu.data(), b_gpu.data(), system.n, tol,
                                   block_size);
         variant_label = "VLU";
-        pivoting = "ordinary_partial_pivoting_custom_lu";
+        pivoting = "ordinary_partial_pivoting_custom_lu_parallel_pivot_swap";
     } else if (variant == "V6a") {
         gpu = gauss_gpu_v6a_blocked(A_gpu.data(), b_gpu.data(), system.n, tol,
                                     panel_width, block_size);

@@ -125,6 +125,11 @@ This release packages the prior CUDA Gauss-elimination prototype as the
 Evidence Pack for CISC 799 (Harrisburg University, Summer 2026).
 
 ### Added
+- Replaced the row-major V2/V3/V5/VLU family serial pivot scan and row
+  swap with a 256-thread pivot-reduction kernel and parallel row-swap kernels.
+  Added July 29 confirmation artifacts for missing standard sizes, M7 conditioned
+  `kappa` coverage, and local SuiteSparse real-matrix checks under
+  `results\parallel_pivot_swap_*_20260729*`.
 - `Dockerfile` based on `nvidia/cuda:12.4.0-devel-ubuntu22.04` for fully
   reproducible builds.
 - `CMakeLists.txt` with GoogleTest auto-fetch and `CMAKE_CUDA_ARCHITECTURES`

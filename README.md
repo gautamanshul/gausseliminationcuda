@@ -1,4 +1,4 @@
-﻿# gausseliminationcuda
+# gausseliminationcuda
 
 A reproducible CUDA implementation of Gauss elimination with partial pivoting and a parallel scaling-factor kernel, packaged with a Dockerised build, a CMake/Make harness, and a plotting script that regenerates the CPU-vs-GPU timing figure used in the A00 Research Proposal (Anshul Gautam, Harrisburg University, CISC 799-50, Summer 2026).
 
@@ -30,12 +30,12 @@ existing `results/timings.csv` with `python plot.py results/timings.csv`.
 - Nvidia GTX 1650 (Turing TU117, Compute Capability 7.5, 4 GB VRAM, 896 CUDA cores)
 - Host: 8 GB+ RAM recommended at *n* = 2000
 
-**Other CUDA-capable GPUs:** Should work on any Compute Capability â‰¥ 6.0 (Pascal and newer). Adjust `CMAKE_CUDA_ARCHITECTURES` in `CMakeLists.txt` accordingly (75 for Turing GTX 16-series; 86 for Ampere; 89 for Ada).
+**Other CUDA-capable GPUs:** Should work on any Compute Capability ≥ 6.0 (Pascal and newer). Adjust `CMAKE_CUDA_ARCHITECTURES` in `CMakeLists.txt` accordingly (75 for Turing GTX 16-series; 86 for Ampere; 89 for Ada).
 
 **Software (host install):**
 - NVIDIA driver supporting CUDA 12.x
 - CUDA Toolkit 12.x (with `nvcc`)
-- CMake â‰¥ 3.18
+- CMake ≥ 3.18
 - A C++17 compiler (gcc-11 or clang-14+ on Linux; MSVC 2019+ on Windows)
 - Google Test (auto-fetched by CMake; no manual install needed)
 - Python 3.9+ with `matplotlib`, `pandas` (for the plotting script only)
@@ -46,7 +46,7 @@ existing `results/timings.csv` with `python plot.py results/timings.csv`.
 
 ---
 
-## Quick start â€” three ways to reproduce
+## Quick start — three ways to reproduce
 
 ### 1. RQ3 container smoke
 
@@ -155,6 +155,15 @@ phase breakdown and fast variants for fairer custom-vs-cuSOLVER solve-time
 comparisons. `V5bf` is a loop-unrolled tiled follow-up where each update thread
 handles two adjacent columns inside the logical tile. Tile shapes are encoded in
 the CSV `variant` label, for example `V5af_t32x32` or `V5bf_t32x32`.
+
+As of the July 29 parallel-pivot/swap update, the row-major V2/V3/V5/VLU family
+uses a 256-thread pivot-reduction kernel and parallel row-swap kernels instead
+of the earlier single-thread pivot scan and single-thread row swap. New CSV rows
+for these paths record `ordinary_partial_pivoting_parallel_pivot_swap` or
+`ordinary_partial_pivoting_custom_lu_parallel_pivot_swap` in the `pivoting`
+column. Older CSV rows with `ordinary_partial_pivoting` for V3f/V5af/V5bf are
+historical serial-pivot/swap measurements and should not be mixed into paired
+post-update comparisons without labeling them as such.
 
 For larger standard-ablation sweeps, `--cpu-reference-max-n` limits when the
 slow CPU V1 reference is run. Rows above the threshold record `cpu_ms=-1` while
@@ -272,6 +281,9 @@ The existing `gpu_ms` column remains CUDA-event time for the solve itself.
 M7 uses the known generated `x_ref`, residual, and solution error for
 correctness at every size. The cubic CPU reference solve runs by default only
 through `n=2048`; larger cases record `cpu_reference_ran=0` and `cpu_ms=-1`.
+A July 29 confirmation pass after the parallel-pivot/swap update wrote
+`results\parallel_pivot_swap_m7_conditioned_n1000_1500_20260729_corrected_labels.csv`
+for `n=1000,1500`, `kappa=1e2,1e4,1e6`, and variants V3f/V5af/V5bf/VLU/V4/V6d.
 Override the threshold when needed:
 
 ```powershell
@@ -347,11 +359,11 @@ Wrote results/timings.csv (4 rows)
 Regenerated results/cpu_vs_gpu_execution_time.png
 ```
 
-(Exact timings will vary by Â±10% depending on host load, driver version, and SM clock state.)
+(Exact timings will vary by ±10% depending on host load, driver version, and SM clock state.)
 
 Output artifacts:
-- `results/timings.csv` â€” one row per (n, block_size) pair with CPU time, GPU time, residual, run timestamp, driver version
-- `results/cpu_vs_gpu_execution_time.png` â€” log-scale comparison plot
+- `results/timings.csv` — one row per (n, block_size) pair with CPU time, GPU time, residual, run timestamp, driver version
+- `results/cpu_vs_gpu_execution_time.png` — log-scale comparison plot
 
 ---
 
@@ -359,18 +371,18 @@ Output artifacts:
 
 ```
 gausseliminationcuda/
-â”œâ”€â”€ LICENSE                    GPL-3.0
-â”œâ”€â”€ README.md                  This file
-â”œâ”€â”€ CHANGELOG.md               Changes from prior versions, including bug fixes
-â”œâ”€â”€ Dockerfile                 nvidia/cuda:12.4.0-devel base image
-â”œâ”€â”€ Makefile                   Convenience wrapper: build / test / reproduce / clean
-â”œâ”€â”€ CMakeLists.txt             CMake build with GoogleTest auto-fetch
-â”œâ”€â”€ plot.py                    Regenerates the CPU-vs-GPU figure from results/timings.csv
-â”œâ”€â”€ src/
-â”‚   â””â”€â”€ gaussElimination.cu    CPU and CUDA implementations + GTest harness
-â””â”€â”€ results/                   Output directory (created at runtime)
-    â”œâ”€â”€ timings.csv
-    â””â”€â”€ cpu_vs_gpu_execution_time.png
+├── LICENSE                    GPL-3.0
+├── README.md                  This file
+├── CHANGELOG.md               Changes from prior versions, including bug fixes
+├── Dockerfile                 nvidia/cuda:12.4.0-devel base image
+├── Makefile                   Convenience wrapper: build / test / reproduce / clean
+├── CMakeLists.txt             CMake build with GoogleTest auto-fetch
+├── plot.py                    Regenerates the CPU-vs-GPU figure from results/timings.csv
+├── src/
+│   └── gaussElimination.cu    CPU and CUDA implementations + GTest harness
+└── results/                   Output directory (created at runtime)
+    ├── timings.csv
+    └── cpu_vs_gpu_execution_time.png
 ```
 
 ---
