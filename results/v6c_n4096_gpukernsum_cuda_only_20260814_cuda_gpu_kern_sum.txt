@@ -1,0 +1,16 @@
+
+ ** CUDA GPU Kernel Summary (cuda_gpu_kern_sum):
+
+ Time (%)  Total Time (ns)  Instances  Avg (ns)  Med (ns)  Min (ns)  Max (ns)  StdDev (ns)                                                  Name
+ --------  ---------------  ---------  --------  --------  --------  --------  -----------  ----------------------------------------------------------------------------------------------------
+     23.9         25136532       4032    6234.3    5104.0      1792     27264       3728.7  update_panel_v6_kernel(float *, int, int, int, const int *)
+     23.6         24815938       4096    6058.6    6048.0      3680     12096       1321.3  find_pivot_check_swap_rhs_and_rows_col_major_v6c_kernel(float *, float *, int, int, float, int *)
+     23.3         24547052         28  876680.4  770607.5     77567   1987006     597375.5  volta_sgemm_128x64_nn
+     16.9         17747022         34  521971.2  282944.0     10048   1838622     564087.6  volta_sgemm_128x32_nn
+      7.6          8030967       4095    1961.2    1952.0      1856      2400         36.8  compute_panel_multipliers_v6_kernel(float *, int, int, const int *)
+      3.8          3956928         63   62808.4   62433.0      7616    119744      33505.4  void kernel_trsm_l_mul32<float, (int)8, (bool)0, (bool)0, (bool)0, (bool)1>(int, int, const T1 *, c?
+      0.5           491295          1  491295.0  491295.0    491295    491295          0.0  void trsv_ln_exec_up<float, (unsigned int)32, (unsigned int)32, (unsigned int)4, (bool)0>(int, cons?
+      0.5           480576          1  480576.0  480576.0    480576    480576          0.0  void trsv_ln_exec<float, (unsigned int)32, (unsigned int)32, (unsigned int)4, (bool)1>(int, const T?
+      0.0             8992          1    8992.0    8992.0      8992      8992          0.0  volta_sgemm_64x32_sliced1x4_nn
+      0.0             1856          1    1856.0    1856.0      1856      1856          0.0  dtrsv_init_up(int *, int)
+      0.0             1440          1    1440.0    1440.0      1440      1440          0.0  dtrsv_init(int *)
