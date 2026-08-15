@@ -1,0 +1,3 @@
+"variant","observed_variant","n","kappa","repeats_of_record","median_gpu_ms","q1_gpu_ms","q3_gpu_ms","iqr_gpu_ms","min_residual_norm2","max_residual_norm2","min_solution_error_norm2","max_solution_error_norm2"
+"V4","V4","32","100","1","10.967","10.967","10.967","0","1.89329E-08","1.89329E-08","5.17865E-07","5.17865E-07"
+"V6c","V6c_b64","32","100","1","4.21693","4.21693","4.21693","0","1.70174E-08","1.70174E-08","4.61368E-07","4.61368E-07"

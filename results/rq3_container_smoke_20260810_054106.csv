@@ -1,0 +1,9 @@
+timestamp,variant,n,block_size,precision,pivoting,cpu_ms,gpu_ms,effective_gflops,residual_norm2,residual_max,solution_error_norm2,solution_error_max,pivot_ms,row_swap_ms,factor_ms,update_ms,back_sub_ms,pivot_pct,row_swap_pct,factor_pct,update_pct,back_sub_pct,driver_version
+2026-08-10T05:41:08,V3f,512,512,FP32,ordinary_partial_pivoting,17.5015,30.9984,2.88655,2.49285e-08,0.000556704,5.84359e-07,2.07715e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-08-10T05:41:09,V3f,1024,512,FP32,ordinary_partial_pivoting,110.227,129.154,5.54242,2.44635e-08,0.00144991,8.06389e-07,2.81469e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-08-10T05:41:09,V4,512,512,FP32,ordinary_partial_pivoting_cusolver_getrf,21.6047,22.4114,3.99255,2.2536e-08,0.000442349,5.28932e-07,1.71861e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-08-10T05:41:10,V4,1024,512,FP32,ordinary_partial_pivoting_cusolver_getrf,226.511,45.4591,15.7466,1.72247e-08,0.000884525,5.67137e-07,1.70463e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-08-10T05:41:10,V5af_t32x32,512,512,FP32,ordinary_partial_pivoting,15.0257,106.543,0.839834,2.49285e-08,0.000556704,5.84359e-07,2.07715e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-08-10T05:41:10,V5af_t32x32,1024,512,FP32,ordinary_partial_pivoting,95.5641,112.46,6.36519,2.44635e-08,0.00144991,8.06389e-07,2.81469e-06,0,0,0,0,0,0,0,0,0,0,12.8
+2026-08-10T05:41:11,V6c_b64,512,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,18.1922,63.1173,1.41765,8.64429e-09,0.000217699,2.02025e-07,8.28683e-07,0,0,0,0,0,0,0,0,0,0,12.8
+2026-08-10T05:41:11,V6c_b64,1024,512,FP32,ordinary_partial_pivoting_blocked_lu_cublas_fused_pivot_swap,127.766,69.2818,10.3321,5.82393e-09,0.000341934,1.90978e-07,6.60549e-07,0,0,0,0,0,0,0,0,0,0,12.8

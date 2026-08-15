@@ -4,6 +4,9 @@ A reproducible CUDA implementation of Gauss elimination with partial pivoting an
 
 This repository is the **software mini-artifact (Deliverable E)** for the A00 Evidence Pack. It demonstrates feasibility of GPU-accelerated dense direct solvers on **commodity Turing hardware (Nvidia GTX 1650, no tensor cores)** and serves as the baseline implementation that the proposed dissertation extends.
 
+For consolidated build, test, benchmark, profiling, energy, container, and
+Docsify commands, see [EXECUTION_COMMAND_REFERENCE.md](EXECUTION_COMMAND_REFERENCE.md).
+
 ---
 
 ## What this artifact does
