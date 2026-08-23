@@ -2889,25 +2889,28 @@ void run_ablation_case(int n, int block_size, const std::string& out_path) {
               << "  solution_error_l2=" << solution_l2 << "\n";
 }
 
-void run_ablation_case_v1(int n, int block_size, const std::string& out_path) {
+void run_ablation_case_v1(int n, int block_size, const std::string& out_path,
+                          bool run_cpu_reference = true) {
     const float tol = 1e-6f;
     std::vector<double> A_original;
     std::vector<double> b_original;
     std::vector<double> x_ref;
     make_known_solution_system(n, A_original, b_original, x_ref);
 
-    std::vector<float> A_cpu = to_float_vector(A_original);
-    std::vector<float> b_cpu = to_float_vector(b_original);
-    std::vector<float> A_gpu = A_cpu;
-    std::vector<float> b_gpu = b_cpu;
-
-    auto t0 = std::chrono::high_resolution_clock::now();
-    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double cpu_ms =
-        std::chrono::duration<double, std::milli>(t1 - t0).count();
-    if (x_cpu.empty()) {
-        throw std::runtime_error("CPU V1 reference reported singular matrix");
+    std::vector<float> A_gpu = to_float_vector(A_original);
+    std::vector<float> b_gpu = to_float_vector(b_original);
+    std::vector<float> x_cpu;
+    double cpu_ms = -1.0;
+    if (run_cpu_reference) {
+        std::vector<float> A_cpu = A_gpu;
+        std::vector<float> b_cpu = b_gpu;
+        auto t0 = std::chrono::high_resolution_clock::now();
+        x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        cpu_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        if (x_cpu.empty()) {
+            throw std::runtime_error("CPU V1 reference reported singular matrix");
+        }
     }
 
     GpuSolveResult gpu = gauss_gpu_v1(A_gpu.data(), b_gpu.data(), n, tol,
@@ -2917,14 +2920,17 @@ void run_ablation_case_v1(int n, int block_size, const std::string& out_path) {
     }
 
     std::vector<double> x_gpu = to_double_vector(b_gpu);
-    std::vector<double> x_cpu_double = to_double_vector(x_cpu);
+    std::vector<double> x_cpu_double =
+        run_cpu_reference ? to_double_vector(x_cpu) : std::vector<double>();
     double residual =
         max_abs_residual(A_original, b_original, x_gpu, n);
     double residual_l2 =
         normalized_residual_l2(A_original, b_original, x_gpu, n);
     double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
     double solution_max = max_abs_solution_error(x_gpu, x_ref);
-    double cpu_gpu_l2 = relative_solution_error_l2(x_gpu, x_cpu_double);
+    double cpu_gpu_l2 =
+        run_cpu_reference ? relative_solution_error_l2(x_gpu, x_cpu_double)
+                          : -1.0;
 
     AblationRow row;
     row.timestamp = current_timestamp();
@@ -2954,25 +2960,28 @@ void run_ablation_case_v1(int n, int block_size, const std::string& out_path) {
               << "  cpu_gpu_l2=" << cpu_gpu_l2 << "\n";
 }
 
-void run_ablation_case_v2(int n, int block_size, const std::string& out_path) {
+void run_ablation_case_v2(int n, int block_size, const std::string& out_path,
+                          bool run_cpu_reference = true) {
     const float tol = 1e-6f;
     std::vector<double> A_original;
     std::vector<double> b_original;
     std::vector<double> x_ref;
     make_known_solution_system(n, A_original, b_original, x_ref);
 
-    std::vector<float> A_cpu = to_float_vector(A_original);
-    std::vector<float> b_cpu = to_float_vector(b_original);
-    std::vector<float> A_gpu = A_cpu;
-    std::vector<float> b_gpu = b_cpu;
-
-    auto t0 = std::chrono::high_resolution_clock::now();
-    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double cpu_ms =
-        std::chrono::duration<double, std::milli>(t1 - t0).count();
-    if (x_cpu.empty()) {
-        throw std::runtime_error("CPU V1 reference reported singular matrix");
+    std::vector<float> A_gpu = to_float_vector(A_original);
+    std::vector<float> b_gpu = to_float_vector(b_original);
+    std::vector<float> x_cpu;
+    double cpu_ms = -1.0;
+    if (run_cpu_reference) {
+        std::vector<float> A_cpu = A_gpu;
+        std::vector<float> b_cpu = b_gpu;
+        auto t0 = std::chrono::high_resolution_clock::now();
+        x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        cpu_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        if (x_cpu.empty()) {
+            throw std::runtime_error("CPU V1 reference reported singular matrix");
+        }
     }
 
     GpuSolveTimedResult gpu = gauss_gpu_v2(A_gpu.data(), b_gpu.data(), n, tol,
@@ -2982,14 +2991,17 @@ void run_ablation_case_v2(int n, int block_size, const std::string& out_path) {
     }
 
     std::vector<double> x_gpu = to_double_vector(b_gpu);
-    std::vector<double> x_cpu_double = to_double_vector(x_cpu);
+    std::vector<double> x_cpu_double =
+        run_cpu_reference ? to_double_vector(x_cpu) : std::vector<double>();
     double residual =
         max_abs_residual(A_original, b_original, x_gpu, n);
     double residual_l2 =
         normalized_residual_l2(A_original, b_original, x_gpu, n);
     double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
     double solution_max = max_abs_solution_error(x_gpu, x_ref);
-    double cpu_gpu_l2 = relative_solution_error_l2(x_gpu, x_cpu_double);
+    double cpu_gpu_l2 =
+        run_cpu_reference ? relative_solution_error_l2(x_gpu, x_cpu_double)
+                          : -1.0;
 
     AblationRow row;
     row.timestamp = current_timestamp();
@@ -3033,25 +3045,28 @@ void run_ablation_case_v2(int n, int block_size, const std::string& out_path) {
               << "  cpu_gpu_l2=" << cpu_gpu_l2 << "\n";
 }
 
-void run_ablation_case_v3(int n, int block_size, const std::string& out_path) {
+void run_ablation_case_v3(int n, int block_size, const std::string& out_path,
+                          bool run_cpu_reference = true) {
     const float tol = 1e-6f;
     std::vector<double> A_original;
     std::vector<double> b_original;
     std::vector<double> x_ref;
     make_known_solution_system(n, A_original, b_original, x_ref);
 
-    std::vector<float> A_cpu = to_float_vector(A_original);
-    std::vector<float> b_cpu = to_float_vector(b_original);
-    std::vector<float> A_gpu = A_cpu;
-    std::vector<float> b_gpu = b_cpu;
-
-    auto t0 = std::chrono::high_resolution_clock::now();
-    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double cpu_ms =
-        std::chrono::duration<double, std::milli>(t1 - t0).count();
-    if (x_cpu.empty()) {
-        throw std::runtime_error("CPU V1 reference reported singular matrix");
+    std::vector<float> A_gpu = to_float_vector(A_original);
+    std::vector<float> b_gpu = to_float_vector(b_original);
+    std::vector<float> x_cpu;
+    double cpu_ms = -1.0;
+    if (run_cpu_reference) {
+        std::vector<float> A_cpu = A_gpu;
+        std::vector<float> b_cpu = b_gpu;
+        auto t0 = std::chrono::high_resolution_clock::now();
+        x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        cpu_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        if (x_cpu.empty()) {
+            throw std::runtime_error("CPU V1 reference reported singular matrix");
+        }
     }
 
     GpuSolveTimedResult gpu = gauss_gpu_v3(A_gpu.data(), b_gpu.data(), n, tol,
@@ -3061,14 +3076,17 @@ void run_ablation_case_v3(int n, int block_size, const std::string& out_path) {
     }
 
     std::vector<double> x_gpu = to_double_vector(b_gpu);
-    std::vector<double> x_cpu_double = to_double_vector(x_cpu);
+    std::vector<double> x_cpu_double =
+        run_cpu_reference ? to_double_vector(x_cpu) : std::vector<double>();
     double residual =
         max_abs_residual(A_original, b_original, x_gpu, n);
     double residual_l2 =
         normalized_residual_l2(A_original, b_original, x_gpu, n);
     double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
     double solution_max = max_abs_solution_error(x_gpu, x_ref);
-    double cpu_gpu_l2 = relative_solution_error_l2(x_gpu, x_cpu_double);
+    double cpu_gpu_l2 =
+        run_cpu_reference ? relative_solution_error_l2(x_gpu, x_cpu_double)
+                          : -1.0;
 
     AblationRow row;
     row.timestamp = current_timestamp();
@@ -3113,25 +3131,28 @@ void run_ablation_case_v3(int n, int block_size, const std::string& out_path) {
 }
 
 void run_ablation_case_v5a(int n, int block_size, const std::string& out_path,
-                           TileShape tile = {}) {
+                           TileShape tile = {},
+                           bool run_cpu_reference = true) {
     const float tol = 1e-6f;
     std::vector<double> A_original;
     std::vector<double> b_original;
     std::vector<double> x_ref;
     make_known_solution_system(n, A_original, b_original, x_ref);
 
-    std::vector<float> A_cpu = to_float_vector(A_original);
-    std::vector<float> b_cpu = to_float_vector(b_original);
-    std::vector<float> A_gpu = A_cpu;
-    std::vector<float> b_gpu = b_cpu;
-
-    auto t0 = std::chrono::high_resolution_clock::now();
-    auto x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double cpu_ms =
-        std::chrono::duration<double, std::milli>(t1 - t0).count();
-    if (x_cpu.empty()) {
-        throw std::runtime_error("CPU V1 reference reported singular matrix");
+    std::vector<float> A_gpu = to_float_vector(A_original);
+    std::vector<float> b_gpu = to_float_vector(b_original);
+    std::vector<float> x_cpu;
+    double cpu_ms = -1.0;
+    if (run_cpu_reference) {
+        std::vector<float> A_cpu = A_gpu;
+        std::vector<float> b_cpu = b_gpu;
+        auto t0 = std::chrono::high_resolution_clock::now();
+        x_cpu = gauss_cpu_v1(A_cpu.data(), b_cpu.data(), n, tol);
+        auto t1 = std::chrono::high_resolution_clock::now();
+        cpu_ms = std::chrono::duration<double, std::milli>(t1 - t0).count();
+        if (x_cpu.empty()) {
+            throw std::runtime_error("CPU V1 reference reported singular matrix");
+        }
     }
 
     GpuSolveTimedResult gpu = gauss_gpu_v5a(A_gpu.data(), b_gpu.data(), n, tol,
@@ -3141,14 +3162,17 @@ void run_ablation_case_v5a(int n, int block_size, const std::string& out_path,
     }
 
     std::vector<double> x_gpu = to_double_vector(b_gpu);
-    std::vector<double> x_cpu_double = to_double_vector(x_cpu);
+    std::vector<double> x_cpu_double =
+        run_cpu_reference ? to_double_vector(x_cpu) : std::vector<double>();
     double residual =
         max_abs_residual(A_original, b_original, x_gpu, n);
     double residual_l2 =
         normalized_residual_l2(A_original, b_original, x_gpu, n);
     double solution_l2 = relative_solution_error_l2(x_gpu, x_ref);
     double solution_max = max_abs_solution_error(x_gpu, x_ref);
-    double cpu_gpu_l2 = relative_solution_error_l2(x_gpu, x_cpu_double);
+    double cpu_gpu_l2 =
+        run_cpu_reference ? relative_solution_error_l2(x_gpu, x_cpu_double)
+                          : -1.0;
 
     AblationRow row;
     row.timestamp = current_timestamp();
@@ -3867,7 +3891,26 @@ void run_m7_synthetic_case(const DenseSystem& system,
               << " n=" << system.n << " variant=" << variant
               << " run=" << run_index << std::endl;
     phase_start = WallClock::now();
-    if (variant == "V3f") {
+    if (variant == "V1") {
+        gpu = gauss_gpu_v1(A_gpu.data(), b_gpu.data(), system.n, tol,
+                           block_size);
+        variant_label = "V1";
+        pivoting = "ordinary_partial_pivoting_serial_pivot_swap";
+    } else if (variant == "V2") {
+        GpuSolveTimedResult timed = gauss_gpu_v2(
+            A_gpu.data(), b_gpu.data(), system.n, tol, block_size);
+        gpu.elapsed_ms = timed.elapsed_ms;
+        gpu.success = timed.success;
+        variant_label = "V2";
+        pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
+    } else if (variant == "V3") {
+        GpuSolveTimedResult timed = gauss_gpu_v3(
+            A_gpu.data(), b_gpu.data(), system.n, tol, block_size);
+        gpu.elapsed_ms = timed.elapsed_ms;
+        gpu.success = timed.success;
+        variant_label = "V3";
+        pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
+    } else if (variant == "V3f") {
         gpu = gauss_gpu_fast_custom(
             A_gpu.data(), b_gpu.data(), system.n, tol, FastUpdateKind::Global2D,
             block_size, tile);
@@ -3877,6 +3920,13 @@ void run_m7_synthetic_case(const DenseSystem& system,
         gpu = gauss_gpu_v4_cusolver(A_gpu.data(), b_gpu.data(), system.n);
         variant_label = "V4";
         pivoting = "ordinary_partial_pivoting_cusolver_getrf";
+    } else if (variant == "V5a") {
+        GpuSolveTimedResult timed = gauss_gpu_v5a(
+            A_gpu.data(), b_gpu.data(), system.n, tol, block_size, tile);
+        gpu.elapsed_ms = timed.elapsed_ms;
+        gpu.success = timed.success;
+        variant_label = "V5a" + tile_suffix(tile);
+        pivoting = "ordinary_partial_pivoting_parallel_pivot_swap";
     } else if (variant == "V5af") {
         gpu = gauss_gpu_fast_custom(
             A_gpu.data(), b_gpu.data(), system.n, tol,
@@ -4072,17 +4122,21 @@ int run_ablation_cli(int argc, char** argv) {
         for (int run_index = 0; run_index < repeats; run_index++) {
             bool run_cpu_reference = n <= cpu_reference_max_n;
             if (variant == "V1") {
-                run_ablation_case_v1(n, block_size, out_path);
+                run_ablation_case_v1(n, block_size, out_path,
+                                     run_cpu_reference);
             } else if (variant == "V2") {
-                run_ablation_case_v2(n, block_size, out_path);
+                run_ablation_case_v2(n, block_size, out_path,
+                                     run_cpu_reference);
             } else if (variant == "V3") {
-                run_ablation_case_v3(n, block_size, out_path);
+                run_ablation_case_v3(n, block_size, out_path,
+                                     run_cpu_reference);
             } else if (variant == "V3f") {
                 run_ablation_case_fast_custom(
                     n, block_size, out_path, "V3f", FastUpdateKind::Global2D,
                     {}, run_cpu_reference);
             } else if (variant == "V5a") {
-                run_ablation_case_v5a(n, block_size, out_path, tile);
+                run_ablation_case_v5a(n, block_size, out_path, tile,
+                                      run_cpu_reference);
             } else if (variant == "V5af") {
                 run_ablation_case_fast_custom(
                     n, block_size, out_path, "V5af",

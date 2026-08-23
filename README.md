@@ -235,6 +235,49 @@ matrix size, the harness appends one CSV row per repeated solve. This is useful
 for median timing summaries and for energy wrappers that need a longer measured
 process envelope.
 
+### Geometric Scale and Conditioning Protocols
+
+The dissertation-scale comparison uses the geometric sequence
+`n = 1000 * 2^p` for `p=1..4`, giving `2000,4000,8000,16000`. It includes every
+implemented performance family: V1, V2, V3, V3f, V4, V5a, V5af, V5bf, VLU,
+V6a, V6b, V6c, V6d, V6e, and V5c. The wrapper performs one excluded warm-up per
+variant and size, five timed repeats by default, and rotates the first variant
+on each repeat to distribute launch-position and thermal effects:
+
+```powershell
+.\scripts\run_geometric_all_variant_sweep.ps1
+```
+
+The wrapper preserves raw and warm-up CSVs, continuous power/clock telemetry,
+per-case process-envelope energy, a run log, and a median/IQR summary. It then
+creates dependency-free SVG figures with logarithmic axes: all-variant timing,
+effective LU-equivalent throughput, energy to solution, energy per effective
+work, and separate rank-1, tiling/unrolling, and blocked-LU family plots.
+Instrumented V2, V3, and
+V5a remain labeled separately from fast V3f, V5af, and V5bf; their timings
+should be used for phase attribution rather than treated as instrumentation-free
+solver comparisons.
+
+On the 4 GB GTX 1650, `n=16000` is the largest complete point in this geometric
+ladder. The next point, `n=32000`, requires 4.096 GB for the FP32 matrix alone,
+before RHS, pivot, factor, status, and solver-workspace allocations. It is
+therefore a documented hardware-memory exclusion, not a missing result.
+
+Condition-number sensitivity is a separate paired/interleaved protocol because
+the deterministic dense SPD generator performs repeated matrix rotations. Its
+default bounded sizes are `n=2000,4000`, with `kappa=1e2,1e4,1e6`, all variants,
+seven total repeats, and the first repeat discarded:
+
+```powershell
+.\scripts\run_geometric_conditioning_sweep.ps1
+```
+
+Sizes above 4000 are opt-in for this script and are marked exploratory. This
+keeps the experiment focused on solver behavior instead of allowing repeated
+host-side conditioned-matrix construction to dominate the protocol. The wrapper
+also generates all-variant log-scale timing, normalized-residual, and relative-
+solution-error SVGs for each tested dimension unless `-SkipPlots` is supplied.
+
 ### V10 Real-Matrix Supplement
 
 `V10` adds an external-validity path for small real or structured matrices.

@@ -222,14 +222,15 @@ Important script parameters:
 | `-GpuIndex` | `0` | Select the GPU used for telemetry. |
 | `-OutputPrefix` | Timestamped `results\paired_frozen_*` | Override the output artifact prefix. |
 
-Each run creates five artifacts from the selected output prefix:
+Each run creates six tabular/log artifacts from the selected output prefix:
 
 | Suffix | Contents |
 |---|---|
 | `.csv` | Raw timed benchmark rows. |
 | `_warmup.csv` | Warm-up rows excluded from headline timing. |
-| `_telemetry.csv` | Pre-case GPU temperature, power, clocks, utilization, repeat, and launch position. |
-| `_summary.csv` | Median, Q1, Q3, IQR, minimum, maximum, repeat count, and maximum correctness errors. |
+| `_telemetry.csv` | Continuous GPU temperature, power, clocks, utilization, repeat, sample time, and launch position. |
+| `_energy.csv` | Per-case sampled process-envelope joules, average/maximum power, wall time, and joules per effective GFLOP. |
+| `_summary.csv` | Median, Q1, Q3, IQR, energy, power, wall time, repeat count, and maximum correctness errors. |
 | `_runlog.txt` | Commit, branch, environment, commands, progress, and benchmark output. |
 
 The default expected timed row count is `4 sizes x 4 variants x 5 repeats = 80 rows`. The script validates this count, positive finite `gpu_ms`, finite normalized residuals, and finite relative solution errors before writing the summary. It refuses to append to an existing output prefix.
@@ -238,9 +239,24 @@ Do not delete or replace an outlying timed row without documenting the reason. R
 
 For an M7 conditioned comparison, use the same outer interleaving idea but ensure every variant receives the same `(n,kappa,seed,run_index)` systems. M7 changes the generated seed with its internal run index, so separate non-interleaved `--repeats` calls are robustness samples rather than a pure paired timing design.
 
+### Geometric all-variant scale sweep
+
+Use the dedicated wrapper for the professor-requested sequence
+`n = 1000 * 2^p`, `p=1..4`, with one warm-up per cell, five timed repeats,
+rotating variant order, continuous power/clock telemetry, process-envelope
+energy integration, robust summaries, and log-scale SVG figures:
+
+```powershell
+& .\scripts\run_geometric_all_variant_sweep.ps1
+```
+
+The default variants are `V1,V2,V3,V3f,V4,V5a,V5af,V5bf,VLU,V6a,V6b,V6c,V6d,V6e,V5c`; the default sizes are `2000,4000,8000,16000`.
+The next geometric point (`n=32000`) cannot fit this 4 GB GPU because its FP32
+matrix alone requires 4.096 GB, before solver workspace and auxiliary arrays.
+
 ## 7. M7 Conditioned Synthetic Runs
 
-Supported tokens: `V3f,V4,V5af,V5bf,VLU,V6a,V6b,V6c,V6d,V6e,V5c`.
+Supported tokens: `V1,V2,V3,V3f,V4,V5a,V5af,V5bf,VLU,V6a,V6b,V6c,V6d,V6e,V5c`.
 
 ```powershell
 # Small validation
@@ -257,6 +273,20 @@ Supported tokens: `V3f,V4,V5af,V5bf,VLU,V6a,V6b,V6c,V6d,V6e,V5c`.
 ```
 
 Long M7 runs print `M7_PHASE` progress records to standard error.
+
+For the bounded all-variant, paired/interleaved condition-number protocol, use:
+
+```powershell
+& .\scripts\run_geometric_conditioning_sweep.ps1
+```
+
+Its defaults are `n=2000,4000`, `kappa=1e2,1e4,1e6`, seven total repeats,
+and one discarded warm-up repeat. Conditioned sizes above 4000 are opt-in
+because repeated dense Givens mixing makes host-side matrix generation dominate
+the experiment. It invokes `scripts/plot_conditioning_sweep.py` and writes
+`*_n<N>_timing_by_kappa_loglog.svg`, `*_n<N>_residual_loglog.svg`, and
+`*_n<N>_solution_error_loglog.svg`. Use `-SkipPlots` only when figures are not
+needed.
 
 ## 8. V10 Real-Matrix Runs
 

@@ -8,6 +8,7 @@ param(
     [int]$TileRows = 32,
     [int]$TileCols = 32,
     [int]$GpuIndex = 0,
+    [int]$TelemetrySampleMs = 200,
     [string]$OutputPrefix = ""
 )
 
@@ -29,8 +30,9 @@ if ($Sizes.Count -eq 0 -or @($Sizes | Where-Object { $_ -le 0 }).Count -ne 0) {
 if ($TimedRepeats -le 0) {
     throw "-TimedRepeats must be positive."
 }
-if ($Block -le 0 -or $PanelWidth -le 0 -or $TileRows -le 0 -or $TileCols -le 0) {
-    throw "Block, panel-width, and tile dimensions must be positive."
+if ($Block -le 0 -or $PanelWidth -le 0 -or $TileRows -le 0 -or
+    $TileCols -le 0 -or $TelemetrySampleMs -le 0) {
+    throw "Block, panel-width, tile dimensions, and telemetry interval must be positive."
 }
 
 foreach ($Command in @("git", "cmake", "nvcc", "nvidia-smi")) {
@@ -57,9 +59,11 @@ if (-not [string]::IsNullOrWhiteSpace($OutputDirectory)) {
 $TimedCsv = "${OutputPrefix}.csv"
 $WarmupCsv = "${OutputPrefix}_warmup.csv"
 $TelemetryCsv = "${OutputPrefix}_telemetry.csv"
+$EnergyCsv = "${OutputPrefix}_energy.csv"
 $RunLog = "${OutputPrefix}_runlog.txt"
 $SummaryCsv = "${OutputPrefix}_summary.csv"
-$OutputFiles = @($TimedCsv, $WarmupCsv, $TelemetryCsv, $RunLog, $SummaryCsv)
+$OutputFiles = @($TimedCsv, $WarmupCsv, $TelemetryCsv, $EnergyCsv,
+                 $RunLog, $SummaryCsv)
 $ExistingOutputs = @($OutputFiles | Where-Object { Test-Path -LiteralPath $_ })
 if ($ExistingOutputs.Count -ne 0) {
     throw "Refusing to append to an existing sweep: $($ExistingOutputs -join ', ')"
@@ -95,6 +99,7 @@ function Write-RunMetadata {
     "panel_width=$PanelWidth" | Add-Content -LiteralPath $RunLog
     "tile=${TileRows}x${TileCols}" | Add-Content -LiteralPath $RunLog
     "gpu_index=$GpuIndex" | Add-Content -LiteralPath $RunLog
+    "telemetry_sample_ms=$TelemetrySampleMs" | Add-Content -LiteralPath $RunLog
     "commit=$(& git -C $RepoRoot rev-parse HEAD)" | Add-Content -LiteralPath $RunLog
     "branch=$(& git -C $RepoRoot branch --show-current)" | Add-Content -LiteralPath $RunLog
     & nvidia-smi -i $GpuIndex | Add-Content -LiteralPath $RunLog
@@ -134,7 +139,9 @@ function Add-TelemetrySample {
         [Parameter(Mandatory)] $Case,
         [Parameter(Mandatory)] [int]$N,
         [Parameter(Mandatory)] [int]$Repeat,
-        [Parameter(Mandatory)] [int]$LaunchPosition
+        [Parameter(Mandatory)] [int]$LaunchPosition,
+        [Parameter(Mandatory)] [int]$SampleIndex,
+        [Parameter(Mandatory)] [double]$ElapsedS
     )
 
     $Line = & nvidia-smi -i $GpuIndex `
@@ -148,12 +155,14 @@ function Add-TelemetrySample {
         throw "Unexpected nvidia-smi telemetry row: $Line"
     }
 
-    [pscustomobject]@{
+    $Record = [pscustomobject]@{
         captured_at = Get-Date -Format o
         repeat = $Repeat
         n = $N
         launch_position = $LaunchPosition
         variant = $Case.Variant
+        sample_index = $SampleIndex
+        elapsed_s = [math]::Round($ElapsedS, 6)
         gpu_timestamp = $Sample[0]
         gpu_name = $Sample[1]
         driver_version = $Sample[2]
@@ -163,7 +172,112 @@ function Add-TelemetrySample {
         memory_clock_mhz = $Sample[6]
         gpu_utilization_pct = $Sample[7]
         memory_utilization_pct = $Sample[8]
-    } | Export-Csv -LiteralPath $TelemetryCsv -NoTypeInformation -Append
+    }
+    $Record | Export-Csv -LiteralPath $TelemetryCsv -NoTypeInformation -Append
+    return $Record
+}
+
+function Invoke-PairedTimedCase {
+    param(
+        [Parameter(Mandatory)] $Case,
+        [Parameter(Mandatory)] [int]$N,
+        [Parameter(Mandatory)] [int]$Repeat,
+        [Parameter(Mandatory)] [int]$LaunchPosition
+    )
+
+    $Arguments = @(
+        "--ablation", "--variant", $Case.Variant,
+        "--n", [string]$N, "--block", [string]$Block,
+        "--repeats", "1", "--cpu-reference-max-n", "0",
+        "--out", $TimedCsv
+    ) + $Case.ExtraArgs
+    $Stdout = [System.IO.Path]::GetTempFileName()
+    $Stderr = [System.IO.Path]::GetTempFileName()
+    $Samples = New-Object System.Collections.Generic.List[object]
+    $Watch = [System.Diagnostics.Stopwatch]::StartNew()
+    $Process = $null
+
+    "CASE stage=timed repeat=$Repeat n=$N variant=$($Case.Variant) launch_position=$LaunchPosition start=$(Get-Date -Format o)" |
+        Tee-Object -FilePath $RunLog -Append
+    try {
+        $Process = Start-Process -FilePath $ExePath -ArgumentList $Arguments `
+            -NoNewWindow -PassThru -RedirectStandardOutput $Stdout `
+            -RedirectStandardError $Stderr
+        $SampleIndex = 0
+        while (-not $Process.HasExited) {
+            $Sample = Add-TelemetrySample -Case $Case -N $N -Repeat $Repeat `
+                -LaunchPosition $LaunchPosition -SampleIndex $SampleIndex `
+                -ElapsedS $Watch.Elapsed.TotalSeconds
+            $Samples.Add($Sample)
+            $SampleIndex++
+            Start-Sleep -Milliseconds $TelemetrySampleMs
+            $Process.Refresh()
+        }
+        $Process.WaitForExit()
+        $Process.Refresh()
+    } finally {
+        $Watch.Stop()
+        Get-Content -LiteralPath $Stdout -ErrorAction SilentlyContinue |
+            Tee-Object -FilePath $RunLog -Append | Write-Host
+        Get-Content -LiteralPath $Stderr -ErrorAction SilentlyContinue |
+            Tee-Object -FilePath $RunLog -Append | Write-Host
+        Remove-Item -LiteralPath $Stdout, $Stderr -Force -ErrorAction SilentlyContinue
+    }
+    if ($null -eq $Process) {
+        throw "Benchmark process did not start: repeat=$Repeat n=$N variant=$($Case.Variant)"
+    }
+    if ($null -ne $Process.ExitCode -and $Process.ExitCode -ne 0) {
+        throw "Benchmark failed: repeat=$Repeat n=$N variant=$($Case.Variant) exit=$($Process.ExitCode)"
+    }
+    if ($Samples.Count -eq 0) {
+        $Sample = Add-TelemetrySample -Case $Case -N $N -Repeat $Repeat `
+            -LaunchPosition $LaunchPosition -SampleIndex 0 -ElapsedS 0.0
+        $Samples.Add($Sample)
+    }
+
+    $DurationS = $Watch.Elapsed.TotalSeconds
+    $EnergyJ = 0.0
+    for ($Index = 0; $Index -lt $Samples.Count; $Index++) {
+        $StartS = [double]$Samples[$Index].elapsed_s
+        $EndS = if ($Index -lt $Samples.Count - 1) {
+            [double]$Samples[$Index + 1].elapsed_s
+        } else {
+            $DurationS
+        }
+        $StartPowerW = [double]$Samples[$Index].power_w
+        $EndPowerW = if ($Index -lt $Samples.Count - 1) {
+            [double]$Samples[$Index + 1].power_w
+        } else {
+            $StartPowerW
+        }
+        $EnergyJ += 0.5 * ($StartPowerW + $EndPowerW) *
+            [math]::Max(0.0, $EndS - $StartS)
+    }
+    $Row = @(Import-Csv -LiteralPath $TimedCsv)[-1]
+    $EffectiveWorkGflop = (2.0 / 3.0) * [math]::Pow($N, 3) / 1.0e9
+    [pscustomobject]@{
+        repeat = $Repeat
+        n = $N
+        launch_position = $LaunchPosition
+        requested_variant = $Case.Variant
+        csv_variant = $Row.variant
+        sample_ms = $TelemetrySampleMs
+        sample_count = $Samples.Count
+        process_wall_ms = [math]::Round($DurationS * 1000.0, 6)
+        gpu_ms = [double]$Row.gpu_ms
+        energy_j = [math]::Round($EnergyJ, 6)
+        avg_power_w = if ($DurationS -gt 0.0) {
+            [math]::Round($EnergyJ / $DurationS, 6)
+        } else { 0.0 }
+        max_power_w = [math]::Round([double](
+            $Samples | Measure-Object -Property power_w -Maximum).Maximum, 6)
+        joules_per_effective_gflop = [math]::Round(
+            $EnergyJ / $EffectiveWorkGflop, 9)
+        max_temperature_c = [double](
+            $Samples | Measure-Object -Property temperature_c -Maximum).Maximum
+        avg_graphics_clock_mhz = [math]::Round([double](
+            $Samples | Measure-Object -Property graphics_clock_mhz -Average).Average, 3)
+    } | Export-Csv -LiteralPath $EnergyCsv -NoTypeInformation -Append
 }
 
 function Get-Percentile {
@@ -185,9 +299,13 @@ function Get-Percentile {
 
 function Test-AndSummarizeResults {
     $Rows = @(Import-Csv -LiteralPath $TimedCsv)
+    $EnergyRows = @(Import-Csv -LiteralPath $EnergyCsv)
     $ExpectedRows = $Sizes.Count * $Cases.Count * $TimedRepeats
     if ($Rows.Count -ne $ExpectedRows) {
         throw "Expected $ExpectedRows timed rows; found $($Rows.Count)."
+    }
+    if ($EnergyRows.Count -ne $ExpectedRows) {
+        throw "Expected $ExpectedRows energy rows; found $($EnergyRows.Count)."
     }
 
     foreach ($Row in $Rows) {
@@ -209,6 +327,16 @@ function Test-AndSummarizeResults {
             [double[]]$Times = $GroupRows | ForEach-Object { [double]$_.gpu_ms }
             [double[]]$Residuals = $GroupRows | ForEach-Object { [double]$_.residual_norm2 }
             [double[]]$SolutionErrors = $GroupRows | ForEach-Object { [double]$_.solution_error_norm2 }
+            $GroupEnergy = @($EnergyRows | Where-Object {
+                $_.csv_variant -eq $GroupRows[0].variant -and
+                [int]$_.n -eq [int]$GroupRows[0].n
+            })
+            [double[]]$EnergyValues = $GroupEnergy | ForEach-Object { [double]$_.energy_j }
+            [double[]]$PowerValues = $GroupEnergy | ForEach-Object { [double]$_.avg_power_w }
+            [double[]]$WallValues = $GroupEnergy | ForEach-Object { [double]$_.process_wall_ms }
+            [double[]]$EfficiencyValues = $GroupEnergy | ForEach-Object {
+                [double]$_.joules_per_effective_gflop
+            }
             $Q1 = Get-Percentile -Values $Times -P 0.25
             $Median = Get-Percentile -Values $Times -P 0.50
             $Q3 = Get-Percentile -Values $Times -P 0.75
@@ -225,6 +353,10 @@ function Test-AndSummarizeResults {
                 max_gpu_ms = [math]::Round(($Times | Measure-Object -Maximum).Maximum, 6)
                 max_residual_norm2 = ($Residuals | Measure-Object -Maximum).Maximum
                 max_solution_error_norm2 = ($SolutionErrors | Measure-Object -Maximum).Maximum
+                median_energy_j = [math]::Round((Get-Percentile -Values $EnergyValues -P 0.50), 6)
+                median_avg_power_w = [math]::Round((Get-Percentile -Values $PowerValues -P 0.50), 6)
+                median_process_wall_ms = [math]::Round((Get-Percentile -Values $WallValues -P 0.50), 6)
+                median_joules_per_effective_gflop = [math]::Round((Get-Percentile -Values $EfficiencyValues -P 0.50), 9)
             }
         } |
         Sort-Object n, variant
@@ -254,10 +386,8 @@ try {
 
             for ($LaunchPosition = 0; $LaunchPosition -lt $OrderedCases.Count; $LaunchPosition++) {
                 $Case = $OrderedCases[$LaunchPosition]
-                Add-TelemetrySample -Case $Case -N $N -Repeat $Repeat `
+                Invoke-PairedTimedCase -Case $Case -N $N -Repeat $Repeat `
                     -LaunchPosition $LaunchPosition
-                Invoke-PairedCase -Case $Case -N $N -OutPath $TimedCsv `
-                    -Stage "timed" -Repeat $Repeat
             }
         }
     }
@@ -267,6 +397,7 @@ try {
     Write-Host "Timed rows:  $TimedCsv"
     Write-Host "Warm-up rows: $WarmupCsv"
     Write-Host "Telemetry:    $TelemetryCsv"
+    Write-Host "Energy:       $EnergyCsv"
     Write-Host "Summary:      $SummaryCsv"
     Write-Host "Run log:      $RunLog"
 } catch {

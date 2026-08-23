@@ -1,0 +1,2922 @@
+PAIRED_SWEEP start=2026-08-22T15:31:06.4729213-04:00
+repository=C:\Users\anshu\source\repos\gausselimcuda
+executable=C:\Users\anshu\source\repos\gausselimcuda\out\build\x64-Release\gauss_elim_bench.exe
+variants=V1,V2,V3,V3f,V4,V5a,V5af,V5bf,VLU,V6a,V6b,V6c,V6d,V6e,V5c
+sizes=2000,4000,8000,16000
+timed_repeats=5
+block=512
+panel_width=64
+tile=32x32
+gpu_index=0
+telemetry_sample_ms=200
+commit=e0545d53336fc591c01f8480407fd1d17331730b
+branch=feature/v0.3.0-ablation-harness
+Sat Aug 22 15:31:06 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 573.22                 Driver Version: 573.22         CUDA Version: 12.8     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                  Driver-Model | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce GTX 1650      WDDM  |   00000000:01:00.0 Off |                  N/A |
+| N/A   60C    P8              6W /   35W |     504MiB /   4096MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A           31800    C+G   ...8bbwe\PhoneExperienceHost.exe      N/A      |
++-----------------------------------------------------------------------------------------+
+cmake version 3.26.3
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2023 NVIDIA Corporation
+Built on Wed_Feb__8_05:53:42_Coordinated_Universal_Time_2023
+Cuda compilation tools, release 12.1, V12.1.66
+Build cuda_12.1.r12.1/compiler.32415258_0
+CASE stage=warmup repeat=-1 n=2000 variant=V1 start=2026-08-22T15:31:07.0386409-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=2000  block=512  CPU=-1 ms  GPU=2277.27 ms  GFLOP/s=2.34199  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V2 start=2026-08-22T15:31:09.8658788-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=2000  block=512  CPU=-1 ms  GPU=2362.97 ms  pivot%=1.62686  row_swap%=1.48423  factor%=1.64168  update%=93.2341  back_sub%=2.01312  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V3 start=2026-08-22T15:31:12.9156048-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=2000  block=512  CPU=-1 ms  GPU=451.992 ms  pivot%=7.58298  row_swap%=8.37926  factor%=9.41123  update%=64.1139  back_sub%=10.5126  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V3f start=2026-08-22T15:31:14.0271504-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=2000  block=512  CPU=-1 ms  GPU=322.601 ms  GFLOP/s=16.5323  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V4 start=2026-08-22T15:31:14.8211100-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=2000  block=512  CPU=-1 ms  GPU=25.7156 ms  GFLOP/s=207.397  residual_l2=1.25573e-08  solution_error_l2=5.7416e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V5a start=2026-08-22T15:31:15.4400680-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=2000  block=512  tile=32x32  CPU=-1 ms  GPU=487.022 ms  pivot%=7.07067  row_swap%=7.8929  factor%=8.58669  update%=66.687  back_sub%=9.76274  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V5af start=2026-08-22T15:31:16.5045033-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=2000  block=512  CPU=-1 ms  GPU=358.488 ms  GFLOP/s=14.8773  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V5bf start=2026-08-22T15:31:17.3459117-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=2000  block=512  CPU=-1 ms  GPU=516.254 ms  GFLOP/s=10.3308  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=VLU start=2026-08-22T15:31:18.3448238-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=2000  block=512  CPU=-1 ms  GPU=377.221 ms  GFLOP/s=14.1385  residual_l2=1.31434e-08  solution_error_l2=5.99648e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V6a start=2026-08-22T15:31:19.1838205-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=2000  panel=64  GPU=137.898 ms  GPU_wall=137.9 ms  GFLOP/s=38.676  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V6b start=2026-08-22T15:31:19.8797046-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=2000  panel=64  GPU=115.562 ms  GPU_wall=115.566 ms  GFLOP/s=46.1514  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V6c start=2026-08-22T15:31:20.5601581-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=2000  panel=64  GPU=87.0111 ms  GPU_wall=87.0154 ms  GFLOP/s=61.2949  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V6d start=2026-08-22T15:31:21.2094881-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=2000  panel=32  GPU=99.2385 ms  GPU_wall=99.2426 ms  GFLOP/s=53.7426  residual_l2=1.20803e-08  solution_error_l2=5.52197e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V6e start=2026-08-22T15:31:21.8522866-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=2000  panel=64  GPU=102.292 ms  GPU_wall=102.295 ms  GFLOP/s=52.1384  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=2000 variant=V5c start=2026-08-22T15:31:22.5056348-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=2000  panel=64  GPU=107.218 ms  GPU_wall=107.222 ms  GFLOP/s=49.743  residual_l2=1.19906e-08  solution_error_l2=5.48212e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V1 start=2026-08-22T15:31:23.1684202-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=4000  block=512  CPU=-1 ms  GPU=14402.2 ms  GFLOP/s=2.96251  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V2 start=2026-08-22T15:31:38.5769579-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=4000  block=512  CPU=-1 ms  GPU=14469.5 ms  pivot%=0.45249  row_swap%=0.347644  factor%=0.37977  update%=97.4826  back_sub%=1.3375  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V3 start=2026-08-22T15:31:54.2211986-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=4000  block=512  CPU=-1 ms  GPU=2414.29 ms  pivot%=2.96103  row_swap%=2.28186  factor%=2.51951  update%=84.226  back_sub%=8.01163  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V3f start=2026-08-22T15:31:57.7157580-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=4000  block=512  CPU=-1 ms  GPU=2186.34 ms  GFLOP/s=19.5151  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V4 start=2026-08-22T15:32:00.7921643-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=4000  block=512  CPU=-1 ms  GPU=55.5684 ms  GFLOP/s=767.823  residual_l2=1.18328e-08  solution_error_l2=7.60311e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V5a start=2026-08-22T15:32:01.9752972-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=4000  block=512  tile=32x32  CPU=-1 ms  GPU=2721.17 ms  pivot%=2.43478  row_swap%=2.20436  factor%=2.3943  update%=85.8582  back_sub%=7.10837  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V5af start=2026-08-22T15:32:05.7962909-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=4000  block=512  CPU=-1 ms  GPU=2430.28 ms  GFLOP/s=17.5562  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V5bf start=2026-08-22T15:32:09.1821569-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=4000  block=512  CPU=-1 ms  GPU=3310.35 ms  GFLOP/s=12.8889  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=VLU start=2026-08-22T15:32:13.4828596-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=4000  block=512  CPU=-1 ms  GPU=2378.59 ms  GFLOP/s=17.9378  residual_l2=1.2128e-08  solution_error_l2=7.79758e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V6a start=2026-08-22T15:32:16.8749023-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=4000  panel=64  GPU=300.421 ms  GPU_wall=300.45 ms  GFLOP/s=142.023  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V6b start=2026-08-22T15:32:18.5190610-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=4000  panel=64  GPU=270.909 ms  GPU_wall=270.913 ms  GFLOP/s=157.494  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V6c start=2026-08-22T15:32:20.1736295-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=4000  panel=64  GPU=219.527 ms  GPU_wall=219.529 ms  GFLOP/s=194.357  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V6d start=2026-08-22T15:32:21.8161577-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=4000  panel=32  GPU=236.121 ms  GPU_wall=236.126 ms  GFLOP/s=180.698  residual_l2=1.19693e-08  solution_error_l2=7.6928e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V6e start=2026-08-22T15:32:23.4848887-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=4000  panel=64  GPU=257.487 ms  GPU_wall=257.491 ms  GFLOP/s=165.704  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=4000 variant=V5c start=2026-08-22T15:32:25.3287893-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=4000  panel=64  GPU=307.787 ms  GPU_wall=307.789 ms  GFLOP/s=138.624  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V1 start=2026-08-22T15:32:27.2184277-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=8000  block=512  CPU=-1 ms  GPU=194620 ms  GFLOP/s=1.75385  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V2 start=2026-08-22T15:35:45.8494932-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=8000  block=512  CPU=-1 ms  GPU=194837 ms  pivot%=0.155001  row_swap%=0.0998533  factor%=0.113566  update%=99.2353  back_sub%=0.396244  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V3 start=2026-08-22T15:39:06.4215086-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=8000  block=512  CPU=-1 ms  GPU=16774.2 ms  pivot%=1.48061  row_swap%=1.22946  factor%=1.2874  update%=91.3996  back_sub%=4.60298  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V3f start=2026-08-22T15:39:29.4972063-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=8000  block=512  CPU=-1 ms  GPU=15786.7 ms  GFLOP/s=21.6215  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V4 start=2026-08-22T15:39:50.1809387-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=8000  block=512  CPU=-1 ms  GPU=328.309 ms  GFLOP/s=1039.67  residual_l2=1.13568e-08  solution_error_l2=1.02736e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V5a start=2026-08-22T15:39:56.5901479-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=8000  block=512  tile=32x32  CPU=-1 ms  GPU=18842.2 ms  pivot%=1.15274  row_swap%=0.853925  factor%=0.976177  update%=92.9202  back_sub%=4.09694  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V5af start=2026-08-22T15:40:20.2832292-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=8000  block=512  CPU=-1 ms  GPU=18182.5 ms  GFLOP/s=18.7726  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V5bf start=2026-08-22T15:40:42.2332404-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=8000  block=512  CPU=-1 ms  GPU=26710.7 ms  GFLOP/s=12.7789  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=VLU start=2026-08-22T15:41:13.1927506-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=8000  block=512  CPU=-1 ms  GPU=16575.6 ms  GFLOP/s=20.5926  residual_l2=1.05104e-08  solution_error_l2=9.51103e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V6a start=2026-08-22T15:41:34.9063220-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=8000  panel=64  GPU=1048.75 ms  GPU_wall=1048.77 ms  GFLOP/s=325.468  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V6b start=2026-08-22T15:41:42.3417347-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=8000  panel=64  GPU=853.436 ms  GPU_wall=853.439 ms  GFLOP/s=399.952  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V6c start=2026-08-22T15:41:48.7994655-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=8000  panel=64  GPU=683.967 ms  GPU_wall=683.914 ms  GFLOP/s=499.049  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V6d start=2026-08-22T15:41:54.7702137-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=8000  panel=64  GPU=633.717 ms  GPU_wall=633.719 ms  GFLOP/s=538.621  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V6e start=2026-08-22T15:42:00.3378304-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=8000  panel=64  GPU=1348.51 ms  GPU_wall=1348.51 ms  GFLOP/s=253.119  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=8000 variant=V5c start=2026-08-22T15:42:06.3689689-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=8000  panel=64  GPU=1814.43 ms  GPU_wall=1814.43 ms  GFLOP/s=188.122  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V1 start=2026-08-22T15:42:12.8903981-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=16000  block=512  CPU=-1 ms  GPU=2.57116e+06 ms  GFLOP/s=1.06204  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V2 start=2026-08-22T16:25:17.4758719-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=16000  block=512  CPU=-1 ms  GPU=2.56908e+06 ms  pivot%=0.028574  row_swap%=0.0133191  factor%=0.0197673  update%=99.8166  back_sub%=0.121692  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V3 start=2026-08-22T17:08:31.7446513-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=16000  block=512  CPU=-1 ms  GPU=125189 ms  pivot%=0.465485  row_swap%=0.239437  factor%=0.388685  update%=96.4212  back_sub%=2.48522  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V3f start=2026-08-22T17:10:52.9392816-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=16000  block=512  CPU=-1 ms  GPU=123941 ms  GFLOP/s=22.0319  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V4 start=2026-08-22T17:13:11.9974598-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=16000  block=512  CPU=-1 ms  GPU=2038.83 ms  GFLOP/s=1339.33  residual_l2=1.12703e-08  solution_error_l2=1.43695e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V5a start=2026-08-22T17:13:32.1600747-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=16000  block=512  tile=32x32  CPU=-1 ms  GPU=160592 ms  pivot%=0.365389  row_swap%=0.185862  factor%=0.303391  update%=97.1995  back_sub%=1.94584  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V5af start=2026-08-22T17:16:25.2082038-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=16000  block=512  CPU=-1 ms  GPU=159261 ms  GFLOP/s=17.1458  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V5bf start=2026-08-22T17:19:19.2948415-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=16000  block=512  CPU=-1 ms  GPU=215565 ms  GFLOP/s=12.6675  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=VLU start=2026-08-22T17:23:09.9286434-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=16000  block=512  CPU=-1 ms  GPU=127131 ms  GFLOP/s=21.4792  residual_l2=3.66895e-09  solution_error_l2=4.6783e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V6a start=2026-08-22T17:25:33.6070190-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=16000  panel=64  GPU=3102.41 ms  GPU_wall=3102.42 ms  GFLOP/s=880.175  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V6b start=2026-08-22T17:26:02.9458025-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=16000  panel=64  GPU=3059.97 ms  GPU_wall=3060 ms  GFLOP/s=892.383  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V6c start=2026-08-22T17:26:17.9832907-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=16000  panel=64  GPU=2949.17 ms  GPU_wall=2949.13 ms  GFLOP/s=925.911  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V6d start=2026-08-22T17:26:33.8453589-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=16000  panel=64  GPU=2950.47 ms  GPU_wall=2950.47 ms  GFLOP/s=925.504  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V6e start=2026-08-22T17:26:50.3323466-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=16000  panel=64  GPU=7347.99 ms  GPU_wall=7347.99 ms  GFLOP/s=371.621  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=16000 variant=V5c start=2026-08-22T17:27:11.1263150-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822_warmup.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=16000  panel=64  GPU=12311.1 ms  GPU_wall=12311.1 ms  GFLOP/s=221.805  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V1 launch_position=0 start=2026-08-22T17:27:36.7761164-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=2000  block=512  CPU=-1 ms  GPU=2243.83 ms  GFLOP/s=2.37689  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V2 launch_position=1 start=2026-08-22T17:27:39.6819106-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=2000  block=512  CPU=-1 ms  GPU=2349.46 ms  pivot%=1.38444  row_swap%=1.26968  factor%=1.37743  update%=93.9316  back_sub%=2.03686  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V3 launch_position=2 start=2026-08-22T17:27:42.7660744-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=2000  block=512  CPU=-1 ms  GPU=440.74 ms  pivot%=7.47695  row_swap%=8.29846  factor%=8.3231  update%=65.0672  back_sub%=10.8343  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V3f launch_position=3 start=2026-08-22T17:27:43.9313502-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=2000  block=512  CPU=-1 ms  GPU=323.032 ms  GFLOP/s=16.5102  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V4 launch_position=4 start=2026-08-22T17:27:44.8235133-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=2000  block=512  CPU=-1 ms  GPU=23.0404 ms  GFLOP/s=231.477  residual_l2=1.25573e-08  solution_error_l2=5.7416e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V5a launch_position=5 start=2026-08-22T17:27:45.4303094-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=2000  block=512  tile=32x32  CPU=-1 ms  GPU=443.262 ms  pivot%=6.13697  row_swap%=6.50093  factor%=7.45524  update%=69.1319  back_sub%=10.775  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V5af launch_position=6 start=2026-08-22T17:27:46.5217606-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=2000  block=512  CPU=-1 ms  GPU=393.399 ms  GFLOP/s=13.557  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V5bf launch_position=7 start=2026-08-22T17:27:47.3500985-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=2000  block=512  CPU=-1 ms  GPU=468.085 ms  GFLOP/s=11.3939  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=VLU launch_position=8 start=2026-08-22T17:27:48.4405846-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=2000  block=512  CPU=-1 ms  GPU=367.485 ms  GFLOP/s=14.5131  residual_l2=1.31434e-08  solution_error_l2=5.99648e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V6a launch_position=9 start=2026-08-22T17:27:49.2558337-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=2000  panel=64  GPU=114.341 ms  GPU_wall=114.345 ms  GFLOP/s=46.6439  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V6b launch_position=10 start=2026-08-22T17:27:49.8910992-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=2000  panel=64  GPU=91.0234 ms  GPU_wall=91.0261 ms  GFLOP/s=58.593  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V6c launch_position=11 start=2026-08-22T17:27:50.4734891-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=2000  panel=64  GPU=75.5377 ms  GPU_wall=75.5407 ms  GFLOP/s=70.6049  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V6d launch_position=12 start=2026-08-22T17:27:51.0645211-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=2000  panel=32  GPU=78.5582 ms  GPU_wall=78.5646 ms  GFLOP/s=67.8902  residual_l2=1.20803e-08  solution_error_l2=5.52197e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V6e launch_position=13 start=2026-08-22T17:27:51.6599945-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=2000  panel=64  GPU=101.024 ms  GPU_wall=101.027 ms  GFLOP/s=52.7929  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=2000 variant=V5c launch_position=14 start=2026-08-22T17:27:52.2577774-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=2000  panel=64  GPU=95.1235 ms  GPU_wall=95.1294 ms  GFLOP/s=56.0675  residual_l2=1.19906e-08  solution_error_l2=5.48212e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V1 launch_position=0 start=2026-08-22T17:27:52.8653947-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=4000  block=512  CPU=-1 ms  GPU=14451 ms  GFLOP/s=2.95251  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V2 launch_position=1 start=2026-08-22T17:28:08.2522250-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=4000  block=512  CPU=-1 ms  GPU=14598.1 ms  pivot%=0.571991  row_swap%=0.44942  factor%=0.505263  update%=97.1463  back_sub%=1.32701  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V3 launch_position=2 start=2026-08-22T17:28:24.1783234-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=4000  block=512  CPU=-1 ms  GPU=2616.1 ms  pivot%=3.7017  row_swap%=3.40894  factor%=3.92055  update%=81.5672  back_sub%=7.4016  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V3f launch_position=3 start=2026-08-22T17:28:28.5648433-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=4000  block=512  CPU=-1 ms  GPU=2205.6 ms  GFLOP/s=19.3447  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V4 launch_position=4 start=2026-08-22T17:28:32.6521756-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=4000  block=512  CPU=-1 ms  GPU=89.1126 ms  GFLOP/s=478.795  residual_l2=1.18328e-08  solution_error_l2=7.60311e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V5a launch_position=5 start=2026-08-22T17:28:34.5875374-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=4000  block=512  tile=32x32  CPU=-1 ms  GPU=2894.75 ms  pivot%=3.41847  row_swap%=3.04894  factor%=3.60441  update%=83.2435  back_sub%=6.68469  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V5af launch_position=6 start=2026-08-22T17:28:39.4481966-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=4000  block=512  CPU=-1 ms  GPU=2443.1 ms  GFLOP/s=17.4642  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V5bf launch_position=7 start=2026-08-22T17:28:43.4927445-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=4000  block=512  CPU=-1 ms  GPU=3319.61 ms  GFLOP/s=12.8529  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=VLU launch_position=8 start=2026-08-22T17:28:48.4170828-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=4000  block=512  CPU=-1 ms  GPU=2392.49 ms  GFLOP/s=17.8336  residual_l2=1.2128e-08  solution_error_l2=7.79758e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V6a launch_position=9 start=2026-08-22T17:28:52.4386671-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=4000  panel=64  GPU=426.488 ms  GPU_wall=426.488 ms  GFLOP/s=100.042  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V6b launch_position=10 start=2026-08-22T17:28:54.7719350-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=4000  panel=64  GPU=335.133 ms  GPU_wall=335.181 ms  GFLOP/s=127.313  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V6c launch_position=11 start=2026-08-22T17:28:57.0321066-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=4000  panel=64  GPU=285.384 ms  GPU_wall=285.386 ms  GFLOP/s=149.506  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V6d launch_position=12 start=2026-08-22T17:28:59.4520018-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=4000  panel=32  GPU=316.705 ms  GPU_wall=316.711 ms  GFLOP/s=134.721  residual_l2=1.19693e-08  solution_error_l2=7.6928e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V6e launch_position=13 start=2026-08-22T17:29:01.4873612-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=4000  panel=64  GPU=314.669 ms  GPU_wall=314.672 ms  GFLOP/s=135.592  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=4000 variant=V5c launch_position=14 start=2026-08-22T17:29:03.4244168-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=4000  panel=64  GPU=349.409 ms  GPU_wall=349.413 ms  GFLOP/s=122.111  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V1 launch_position=0 start=2026-08-22T17:29:05.3910550-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=8000  block=512  CPU=-1 ms  GPU=194773 ms  GFLOP/s=1.75246  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V2 launch_position=1 start=2026-08-22T17:32:24.5994951-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=8000  block=512  CPU=-1 ms  GPU=194922 ms  pivot%=0.159365  row_swap%=0.100656  factor%=0.113355  update%=99.2284  back_sub%=0.398229  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V3 launch_position=2 start=2026-08-22T17:35:45.0151690-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=8000  block=512  CPU=-1 ms  GPU=16779.2 ms  pivot%=1.61643  row_swap%=1.26393  factor%=1.38603  update%=91.133  back_sub%=4.60059  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V3f launch_position=3 start=2026-08-22T17:36:07.2861450-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=8000  block=512  CPU=-1 ms  GPU=15786.9 ms  GFLOP/s=21.6213  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V4 launch_position=4 start=2026-08-22T17:36:27.7541386-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=8000  block=512  CPU=-1 ms  GPU=312.387 ms  GFLOP/s=1092.66  residual_l2=1.13568e-08  solution_error_l2=1.02736e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V5a launch_position=5 start=2026-08-22T17:36:33.7428301-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=8000  block=512  tile=32x32  CPU=-1 ms  GPU=18727.9 ms  pivot%=1.08387  row_swap%=0.740245  factor%=0.865668  update%=93.1687  back_sub%=4.14156  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V5af launch_position=6 start=2026-08-22T17:36:57.1042341-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=8000  block=512  CPU=-1 ms  GPU=18152 ms  GFLOP/s=18.8041  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V5bf launch_position=7 start=2026-08-22T17:37:18.8038161-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=8000  block=512  CPU=-1 ms  GPU=26711.9 ms  GFLOP/s=12.7783  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=VLU launch_position=8 start=2026-08-22T17:37:49.1632918-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=8000  block=512  CPU=-1 ms  GPU=16569.6 ms  GFLOP/s=20.5999  residual_l2=1.05104e-08  solution_error_l2=9.51103e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V6a launch_position=9 start=2026-08-22T17:38:10.2522869-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=8000  panel=64  GPU=1162.24 ms  GPU_wall=1162.26 ms  GFLOP/s=293.685  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V6b launch_position=10 start=2026-08-22T17:38:17.6439553-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=8000  panel=64  GPU=775.58 ms  GPU_wall=775.581 ms  GFLOP/s=440.101  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V6c launch_position=11 start=2026-08-22T17:38:23.9091233-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=8000  panel=64  GPU=674.085 ms  GPU_wall=674.09 ms  GFLOP/s=506.366  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V6d launch_position=12 start=2026-08-22T17:38:29.5678131-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=8000  panel=64  GPU=615.257 ms  GPU_wall=615.26 ms  GFLOP/s=554.781  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V6e launch_position=13 start=2026-08-22T17:38:34.8306799-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=8000  panel=64  GPU=1372.1 ms  GPU_wall=1372.1 ms  GFLOP/s=248.767  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=8000 variant=V5c launch_position=14 start=2026-08-22T17:38:40.6050050-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=8000  panel=64  GPU=1720.18 ms  GPU_wall=1720.19 ms  GFLOP/s=198.429  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V1 launch_position=0 start=2026-08-22T17:38:46.5259860-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=16000  block=512  CPU=-1 ms  GPU=2.57087e+06 ms  GFLOP/s=1.06216  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V2 launch_position=1 start=2026-08-22T18:21:49.7817349-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=16000  block=512  CPU=-1 ms  GPU=2.56937e+06 ms  pivot%=0.0339475  row_swap%=0.01702  factor%=0.0219719  update%=99.8054  back_sub%=0.121682  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V3 launch_position=2 start=2026-08-22T19:04:58.1273847-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=16000  block=512  CPU=-1 ms  GPU=125738 ms  pivot%=0.558255  row_swap%=0.317336  factor%=0.452119  update%=96.1873  back_sub%=2.48499  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V3f launch_position=3 start=2026-08-22T19:07:23.2310932-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=16000  block=512  CPU=-1 ms  GPU=123984 ms  GFLOP/s=22.0244  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V4 launch_position=4 start=2026-08-22T19:09:46.1952303-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=16000  block=512  CPU=-1 ms  GPU=2070.28 ms  GFLOP/s=1318.99  residual_l2=1.12703e-08  solution_error_l2=1.43695e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V5a launch_position=5 start=2026-08-22T19:10:12.0009453-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=16000  block=512  tile=32x32  CPU=-1 ms  GPU=161094 ms  pivot%=0.419601  row_swap%=0.22559  factor%=0.334665  update%=97.0801  back_sub%=1.94008  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V5af launch_position=6 start=2026-08-22T19:13:05.7071851-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=16000  block=512  CPU=-1 ms  GPU=159284 ms  GFLOP/s=17.1434  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V5bf launch_position=7 start=2026-08-22T19:16:02.7567579-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=16000  block=512  CPU=-1 ms  GPU=239423 ms  GFLOP/s=11.4052  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=VLU launch_position=8 start=2026-08-22T19:20:20.1444811-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=16000  block=512  CPU=-1 ms  GPU=148515 ms  GFLOP/s=18.3865  residual_l2=3.66895e-09  solution_error_l2=4.6783e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V6a launch_position=9 start=2026-08-22T19:23:07.5449689-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=16000  panel=64  GPU=3748.12 ms  GPU_wall=3748.17 ms  GFLOP/s=728.543  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V6b launch_position=10 start=2026-08-22T19:23:35.5837274-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=16000  panel=64  GPU=3648.02 ms  GPU_wall=3648.14 ms  GFLOP/s=748.534  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V6c launch_position=11 start=2026-08-22T19:23:53.1539357-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=16000  panel=64  GPU=3621.78 ms  GPU_wall=3621.9 ms  GFLOP/s=753.956  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V6d launch_position=12 start=2026-08-22T19:24:13.1967362-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=16000  panel=64  GPU=3569.39 ms  GPU_wall=3569.45 ms  GFLOP/s=765.024  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V6e launch_position=13 start=2026-08-22T19:24:33.2752030-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=16000  panel=64  GPU=8633.33 ms  GPU_wall=8633.36 ms  GFLOP/s=316.294  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=16000 variant=V5c launch_position=14 start=2026-08-22T19:25:00.8867389-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=16000  panel=64  GPU=14453.3 ms  GPU_wall=14453.4 ms  GFLOP/s=188.93  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V2 launch_position=0 start=2026-08-22T19:25:41.6612155-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=2000  block=512  CPU=-1 ms  GPU=3025.91 ms  pivot%=5.09395  row_swap%=3.94378  factor%=3.99331  update%=85.1715  back_sub%=1.79742  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V3 launch_position=1 start=2026-08-22T19:25:46.5715657-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=2000  block=512  CPU=-1 ms  GPU=625.509 ms  pivot%=13.2123  row_swap%=11.0633  factor%=12.5641  update%=53.7553  back_sub%=9.40495  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V3f launch_position=2 start=2026-08-22T19:25:49.7242045-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=2000  block=512  CPU=-1 ms  GPU=376.661 ms  GFLOP/s=14.1595  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V4 launch_position=3 start=2026-08-22T19:25:50.7420552-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=2000  block=512  CPU=-1 ms  GPU=29.8992 ms  GFLOP/s=178.377  residual_l2=1.25573e-08  solution_error_l2=5.7416e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V5a launch_position=4 start=2026-08-22T19:25:51.4220328-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=2000  block=512  tile=32x32  CPU=-1 ms  GPU=553.95 ms  pivot%=8.67247  row_swap%=9.13675  factor%=10.117  update%=61.5296  back_sub%=10.5441  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V5af launch_position=5 start=2026-08-22T19:25:52.8621408-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=2000  block=512  CPU=-1 ms  GPU=418.656 ms  GFLOP/s=12.7392  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V5bf launch_position=6 start=2026-08-22T19:25:53.7782263-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=2000  block=512  CPU=-1 ms  GPU=554.043 ms  GFLOP/s=9.6262  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=VLU launch_position=7 start=2026-08-22T19:25:54.9310398-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=2000  block=512  CPU=-1 ms  GPU=472.728 ms  GFLOP/s=11.282  residual_l2=1.31434e-08  solution_error_l2=5.99648e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V6a launch_position=8 start=2026-08-22T19:25:56.0960156-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=2000  panel=64  GPU=179.536 ms  GPU_wall=179.501 ms  GFLOP/s=29.7062  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V6b launch_position=9 start=2026-08-22T19:25:56.9638959-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=2000  panel=64  GPU=132.316 ms  GPU_wall=132.361 ms  GFLOP/s=40.3074  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V6c launch_position=10 start=2026-08-22T19:25:57.8343927-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=2000  panel=64  GPU=117.816 ms  GPU_wall=117.822 ms  GFLOP/s=45.2683  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V6d launch_position=11 start=2026-08-22T19:25:58.6967982-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=2000  panel=32  GPU=84.8505 ms  GPU_wall=84.8544 ms  GFLOP/s=62.8557  residual_l2=1.20803e-08  solution_error_l2=5.52197e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V6e launch_position=12 start=2026-08-22T19:25:59.6098271-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=2000  panel=64  GPU=117.928 ms  GPU_wall=118.41 ms  GFLOP/s=45.2253  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V5c launch_position=13 start=2026-08-22T19:26:00.4655869-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=2000  panel=64  GPU=109.535 ms  GPU_wall=109.555 ms  GFLOP/s=48.6907  residual_l2=1.19906e-08  solution_error_l2=5.48212e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=2000 variant=V1 launch_position=14 start=2026-08-22T19:26:01.1112469-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=2000  block=512  CPU=-1 ms  GPU=2607.26 ms  GFLOP/s=2.04557  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V2 launch_position=0 start=2026-08-22T19:26:04.3865613-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=4000  block=512  CPU=-1 ms  GPU=16748.7 ms  pivot%=0.685785  row_swap%=0.430067  factor%=0.438286  update%=97.0963  back_sub%=1.34957  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V3 launch_position=1 start=2026-08-22T19:26:22.5275332-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=4000  block=512  CPU=-1 ms  GPU=2820.99 ms  pivot%=3.22177  row_swap%=2.94651  factor%=3.19723  update%=82.5871  back_sub%=8.04738  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V3f launch_position=2 start=2026-08-22T19:26:26.9742128-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=4000  block=512  CPU=-1 ms  GPU=2597.72 ms  GFLOP/s=16.4247  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V4 launch_position=3 start=2026-08-22T19:26:30.8621714-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=4000  block=512  CPU=-1 ms  GPU=70.0846 ms  GFLOP/s=608.788  residual_l2=1.18328e-08  solution_error_l2=7.60311e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V5a launch_position=4 start=2026-08-22T19:26:32.7214421-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=4000  block=512  tile=32x32  CPU=-1 ms  GPU=3339.68 ms  pivot%=4.49518  row_swap%=3.89059  factor%=4.23355  update%=80.5815  back_sub%=6.79915  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V5af launch_position=5 start=2026-08-22T19:26:38.2595973-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=4000  block=512  CPU=-1 ms  GPU=2865.74 ms  GFLOP/s=14.8886  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V5bf launch_position=6 start=2026-08-22T19:26:43.2442611-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=4000  block=512  CPU=-1 ms  GPU=3824.84 ms  GFLOP/s=11.1552  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=VLU launch_position=7 start=2026-08-22T19:26:49.3712113-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=4000  block=512  CPU=-1 ms  GPU=2754.73 ms  GFLOP/s=15.4885  residual_l2=1.2128e-08  solution_error_l2=7.79758e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V6a launch_position=8 start=2026-08-22T19:26:54.4742435-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=4000  panel=64  GPU=675.353 ms  GPU_wall=675.376 ms  GFLOP/s=63.1769  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V6b launch_position=9 start=2026-08-22T19:26:57.6476529-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=4000  panel=64  GPU=543.713 ms  GPU_wall=544.13 ms  GFLOP/s=78.4727  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V6c launch_position=10 start=2026-08-22T19:27:00.6511073-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=4000  panel=64  GPU=424.807 ms  GPU_wall=424.807 ms  GFLOP/s=100.438  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V6d launch_position=11 start=2026-08-22T19:27:03.5162752-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=4000  panel=32  GPU=368.427 ms  GPU_wall=368.432 ms  GFLOP/s=115.808  residual_l2=1.19693e-08  solution_error_l2=7.6928e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V6e launch_position=12 start=2026-08-22T19:27:06.1997183-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=4000  panel=64  GPU=325.932 ms  GPU_wall=326.244 ms  GFLOP/s=130.907  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V5c launch_position=13 start=2026-08-22T19:27:08.6316219-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=4000  panel=64  GPU=491.69 ms  GPU_wall=491.739 ms  GFLOP/s=86.7755  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=4000 variant=V1 launch_position=14 start=2026-08-22T19:27:11.2704518-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=4000  block=512  CPU=-1 ms  GPU=16666.2 ms  GFLOP/s=2.56007  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V2 launch_position=0 start=2026-08-22T19:27:29.6495795-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=8000  block=512  CPU=-1 ms  GPU=226150 ms  pivot%=0.244393  row_swap%=0.150643  factor%=0.160239  update%=99.0599  back_sub%=0.384859  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V3 launch_position=1 start=2026-08-22T19:31:21.4786988-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=8000  block=512  CPU=-1 ms  GPU=19645.2 ms  pivot%=2.03173  row_swap%=1.75058  factor%=1.80895  update%=89.8586  back_sub%=4.5501  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V3f launch_position=2 start=2026-08-22T19:31:47.8724665-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=8000  block=512  CPU=-1 ms  GPU=18535.9 ms  GFLOP/s=18.4147  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V4 launch_position=3 start=2026-08-22T19:32:12.7057543-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=8000  block=512  CPU=-1 ms  GPU=358.967 ms  GFLOP/s=950.875  residual_l2=1.13568e-08  solution_error_l2=1.02736e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V5a launch_position=4 start=2026-08-22T19:32:19.7924880-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=8000  block=512  tile=32x32  CPU=-1 ms  GPU=21881.6 ms  pivot%=1.19593  row_swap%=0.86128  factor%=0.952471  update%=92.8767  back_sub%=4.11359  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V5af launch_position=5 start=2026-08-22T19:32:48.0384156-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=8000  block=512  CPU=-1 ms  GPU=20149.7 ms  GFLOP/s=16.9399  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V5bf launch_position=6 start=2026-08-22T19:33:11.9054723-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=8000  block=512  CPU=-1 ms  GPU=26739.5 ms  GFLOP/s=12.7651  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=VLU launch_position=7 start=2026-08-22T19:33:42.4533949-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=8000  block=512  CPU=-1 ms  GPU=16588.1 ms  GFLOP/s=20.577  residual_l2=1.05104e-08  solution_error_l2=9.51103e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V6a launch_position=8 start=2026-08-22T19:34:04.1290328-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=8000  panel=64  GPU=1165.09 ms  GPU_wall=1165.09 ms  GFLOP/s=292.966  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V6b launch_position=9 start=2026-08-22T19:34:11.4111454-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=8000  panel=64  GPU=774.59 ms  GPU_wall=774.592 ms  GFLOP/s=440.663  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V6c launch_position=10 start=2026-08-22T19:34:17.8189170-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=8000  panel=64  GPU=646.427 ms  GPU_wall=646.429 ms  GFLOP/s=528.031  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V6d launch_position=11 start=2026-08-22T19:34:23.4707900-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=8000  panel=64  GPU=636.596 ms  GPU_wall=636.638 ms  GFLOP/s=536.185  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V6e launch_position=12 start=2026-08-22T19:34:28.7134649-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=8000  panel=64  GPU=1340.03 ms  GPU_wall=1340.04 ms  GFLOP/s=254.72  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V5c launch_position=13 start=2026-08-22T19:34:34.4795007-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=8000  panel=64  GPU=1754.64 ms  GPU_wall=1754.64 ms  GFLOP/s=194.532  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=8000 variant=V1 launch_position=14 start=2026-08-22T19:34:40.6034238-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=8000  block=512  CPU=-1 ms  GPU=194802 ms  GFLOP/s=1.7522  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V2 launch_position=0 start=2026-08-22T19:37:58.8756579-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=16000  block=512  CPU=-1 ms  GPU=2.56944e+06 ms  pivot%=0.0337502  row_swap%=0.0170471  factor%=0.0220041  update%=99.8056  back_sub%=0.121596  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V3 launch_position=1 start=2026-08-22T20:21:06.7320138-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=16000  block=512  CPU=-1 ms  GPU=125658 ms  pivot%=0.574364  row_swap%=0.314294  factor%=0.457105  update%=96.1673  back_sub%=2.48696  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V3f launch_position=2 start=2026-08-22T20:23:30.7862337-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=16000  block=512  CPU=-1 ms  GPU=124015 ms  GFLOP/s=22.0189  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V4 launch_position=3 start=2026-08-22T20:25:52.3667425-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=16000  block=512  CPU=-1 ms  GPU=2078.21 ms  GFLOP/s=1313.95  residual_l2=1.12703e-08  solution_error_l2=1.43695e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V5a launch_position=4 start=2026-08-22T20:26:18.5339176-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=16000  block=512  tile=32x32  CPU=-1 ms  GPU=161105 ms  pivot%=0.429377  row_swap%=0.244411  factor%=0.345807  update%=97.0406  back_sub%=1.9398  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V5af launch_position=5 start=2026-08-22T20:29:12.0682005-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=16000  block=512  CPU=-1 ms  GPU=166016 ms  GFLOP/s=16.4482  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V5bf launch_position=6 start=2026-08-22T20:32:15.5242390-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=16000  block=512  CPU=-1 ms  GPU=247687 ms  GFLOP/s=11.0247  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=VLU launch_position=7 start=2026-08-22T20:36:42.9422587-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=16000  block=512  CPU=-1 ms  GPU=149231 ms  GFLOP/s=18.2982  residual_l2=3.66895e-09  solution_error_l2=4.6783e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V6a launch_position=8 start=2026-08-22T20:39:39.0668152-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=16000  panel=64  GPU=3718.66 ms  GPU_wall=3718.76 ms  GFLOP/s=734.314  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V6b launch_position=9 start=2026-08-22T20:40:07.8406438-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=16000  panel=64  GPU=3738.39 ms  GPU_wall=3738.49 ms  GFLOP/s=730.438  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V6c launch_position=10 start=2026-08-22T20:40:26.2611670-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=16000  panel=64  GPU=3564.11 ms  GPU_wall=3564.15 ms  GFLOP/s=766.157  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V6d launch_position=11 start=2026-08-22T20:40:46.0610203-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=16000  panel=64  GPU=3545.54 ms  GPU_wall=3545.57 ms  GFLOP/s=770.17  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V6e launch_position=12 start=2026-08-22T20:41:05.8853667-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=16000  panel=64  GPU=8553.4 ms  GPU_wall=8553.46 ms  GFLOP/s=319.249  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V5c launch_position=13 start=2026-08-22T20:41:30.5658632-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=16000  panel=64  GPU=14130.1 ms  GPU_wall=14130.2 ms  GFLOP/s=193.252  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=1 n=16000 variant=V1 launch_position=14 start=2026-08-22T20:42:04.3645633-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=16000  block=512  CPU=-1 ms  GPU=2.66095e+06 ms  GFLOP/s=1.0262  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V3 launch_position=0 start=2026-08-22T21:26:40.2542729-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=2000  block=512  CPU=-1 ms  GPU=555.613 ms  pivot%=9.2556  row_swap%=9.85822  factor%=10.1589  update%=62.1547  back_sub%=8.57257  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V3f launch_position=1 start=2026-08-22T21:26:41.6767956-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=2000  block=512  CPU=-1 ms  GPU=327.539 ms  GFLOP/s=16.283  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V4 launch_position=2 start=2026-08-22T21:26:43.0143492-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=2000  block=512  CPU=-1 ms  GPU=34.877 ms  GFLOP/s=152.918  residual_l2=1.25573e-08  solution_error_l2=5.7416e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V5a launch_position=3 start=2026-08-22T21:26:43.9532350-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=2000  block=512  tile=32x32  CPU=-1 ms  GPU=582.966 ms  pivot%=8.08616  row_swap%=7.52362  factor%=8.81546  update%=67.4193  back_sub%=8.15544  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V5af launch_position=4 start=2026-08-22T21:26:45.5994462-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=2000  block=512  CPU=-1 ms  GPU=373.991 ms  GFLOP/s=14.2606  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V5bf launch_position=5 start=2026-08-22T21:26:46.8885749-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=2000  block=512  CPU=-1 ms  GPU=480.463 ms  GFLOP/s=11.1004  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=VLU launch_position=6 start=2026-08-22T21:26:48.1914802-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=2000  block=512  CPU=-1 ms  GPU=391.751 ms  GFLOP/s=13.6141  residual_l2=1.31434e-08  solution_error_l2=5.99648e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V6a launch_position=7 start=2026-08-22T21:26:49.2265705-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=2000  panel=64  GPU=227.24 ms  GPU_wall=227.243 ms  GFLOP/s=23.47  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V6b launch_position=8 start=2026-08-22T21:26:50.2460028-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=2000  panel=64  GPU=159.065 ms  GPU_wall=159.067 ms  GFLOP/s=33.5293  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V6c launch_position=9 start=2026-08-22T21:26:51.2237268-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=2000  panel=64  GPU=131.69 ms  GPU_wall=131.694 ms  GFLOP/s=40.4993  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V6d launch_position=10 start=2026-08-22T21:26:52.1947869-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=2000  panel=32  GPU=120.41 ms  GPU_wall=120.414 ms  GFLOP/s=44.2932  residual_l2=1.20803e-08  solution_error_l2=5.52197e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V6e launch_position=11 start=2026-08-22T21:26:53.1425884-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=2000  panel=64  GPU=102.836 ms  GPU_wall=102.841 ms  GFLOP/s=51.8625  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V5c launch_position=12 start=2026-08-22T21:26:54.1148464-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=2000  panel=64  GPU=116.835 ms  GPU_wall=116.838 ms  GFLOP/s=45.6484  residual_l2=1.19906e-08  solution_error_l2=5.48212e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V1 launch_position=13 start=2026-08-22T21:26:55.0631040-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=2000  block=512  CPU=-1 ms  GPU=2247.39 ms  GFLOP/s=2.37313  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=2000 variant=V2 launch_position=14 start=2026-08-22T21:26:57.9381713-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=2000  block=512  CPU=-1 ms  GPU=2380.47 ms  pivot%=1.70452  row_swap%=1.61015  factor%=2.06979  update%=92.6189  back_sub%=1.99666  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V3 launch_position=0 start=2026-08-22T21:27:01.2179655-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=4000  block=512  CPU=-1 ms  GPU=2533.41 ms  pivot%=3.09959  row_swap%=3.09422  factor%=3.35924  update%=82.8501  back_sub%=7.59685  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V3f launch_position=1 start=2026-08-22T21:27:05.3320287-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=4000  block=512  CPU=-1 ms  GPU=2189.45 ms  GFLOP/s=19.4874  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V4 launch_position=2 start=2026-08-22T21:27:08.7820696-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=4000  block=512  CPU=-1 ms  GPU=62.364 ms  GFLOP/s=684.156  residual_l2=1.18328e-08  solution_error_l2=7.60311e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V5a launch_position=3 start=2026-08-22T21:27:10.2494372-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=4000  block=512  tile=32x32  CPU=-1 ms  GPU=2738.2 ms  pivot%=2.63115  row_swap%=2.44094  factor%=2.74199  update%=85.1582  back_sub%=7.02775  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V5af launch_position=4 start=2026-08-22T21:27:14.3182512-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=4000  block=512  CPU=-1 ms  GPU=2466.46 ms  GFLOP/s=17.2987  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V5bf launch_position=5 start=2026-08-22T21:27:18.0508805-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=4000  block=512  CPU=-1 ms  GPU=3310.39 ms  GFLOP/s=12.8887  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=VLU launch_position=6 start=2026-08-22T21:27:22.5706840-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=4000  block=512  CPU=-1 ms  GPU=2376.5 ms  GFLOP/s=17.9536  residual_l2=1.2128e-08  solution_error_l2=7.79758e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V6a launch_position=7 start=2026-08-22T21:27:26.1543947-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=4000  panel=64  GPU=277.551 ms  GPU_wall=277.553 ms  GFLOP/s=153.725  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V6b launch_position=8 start=2026-08-22T21:27:27.6565963-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=4000  panel=64  GPU=234.453 ms  GPU_wall=234.457 ms  GFLOP/s=181.984  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V6c launch_position=9 start=2026-08-22T21:27:29.0997548-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=4000  panel=64  GPU=203.403 ms  GPU_wall=203.408 ms  GFLOP/s=209.764  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V6d launch_position=10 start=2026-08-22T21:27:30.5046612-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=4000  panel=32  GPU=209.512 ms  GPU_wall=209.518 ms  GFLOP/s=203.647  residual_l2=1.19693e-08  solution_error_l2=7.6928e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V6e launch_position=11 start=2026-08-22T21:27:31.9119836-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=4000  panel=64  GPU=258.877 ms  GPU_wall=258.881 ms  GFLOP/s=164.814  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V5c launch_position=12 start=2026-08-22T21:27:33.3707540-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=4000  panel=64  GPU=300.498 ms  GPU_wall=300.503 ms  GFLOP/s=141.986  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V1 launch_position=13 start=2026-08-22T21:27:34.8562104-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=4000  block=512  CPU=-1 ms  GPU=14410.8 ms  GFLOP/s=2.96074  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=4000 variant=V2 launch_position=14 start=2026-08-22T21:27:50.3585262-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=4000  block=512  CPU=-1 ms  GPU=14581.1 ms  pivot%=0.563767  row_swap%=0.448756  factor%=0.481218  update%=97.1802  back_sub%=1.32605  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V3 launch_position=0 start=2026-08-22T21:28:06.3072764-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=8000  block=512  CPU=-1 ms  GPU=16641 ms  pivot%=1.42383  row_swap%=1.09476  factor%=1.20891  update%=91.6119  back_sub%=4.66059  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V3f launch_position=1 start=2026-08-22T21:28:27.2845239-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=8000  block=512  CPU=-1 ms  GPU=15792 ms  GFLOP/s=21.6144  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V4 launch_position=2 start=2026-08-22T21:28:48.0006508-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=8000  block=512  CPU=-1 ms  GPU=324.798 ms  GFLOP/s=1050.91  residual_l2=1.13568e-08  solution_error_l2=1.02736e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V5a launch_position=3 start=2026-08-22T21:28:53.9964055-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=8000  block=512  tile=32x32  CPU=-1 ms  GPU=18744.1 ms  pivot%=1.04027  row_swap%=0.732682  factor%=0.875698  update%=93.2102  back_sub%=4.14113  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V5af launch_position=4 start=2026-08-22T21:29:17.3473578-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=8000  block=512  CPU=-1 ms  GPU=18186.1 ms  GFLOP/s=18.7689  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V5bf launch_position=5 start=2026-08-22T21:29:38.8393621-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=8000  block=512  CPU=-1 ms  GPU=26709.6 ms  GFLOP/s=12.7794  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=VLU launch_position=6 start=2026-08-22T21:30:09.1422084-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=8000  block=512  CPU=-1 ms  GPU=16572.7 ms  GFLOP/s=20.5961  residual_l2=1.05104e-08  solution_error_l2=9.51103e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V6a launch_position=7 start=2026-08-22T21:30:29.9700798-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=8000  panel=64  GPU=1006.04 ms  GPU_wall=1006.04 ms  GFLOP/s=339.284  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V6b launch_position=8 start=2026-08-22T21:30:36.8215443-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=8000  panel=64  GPU=829.238 ms  GPU_wall=829.24 ms  GFLOP/s=411.623  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V6c launch_position=9 start=2026-08-22T21:30:43.0093804-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=8000  panel=64  GPU=645.391 ms  GPU_wall=645.389 ms  GFLOP/s=528.878  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V6d launch_position=10 start=2026-08-22T21:30:48.6536915-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=8000  panel=64  GPU=619.405 ms  GPU_wall=619.41 ms  GFLOP/s=551.066  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V6e launch_position=11 start=2026-08-22T21:30:53.9506622-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=8000  panel=64  GPU=1374.3 ms  GPU_wall=1374.3 ms  GFLOP/s=248.37  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V5c launch_position=12 start=2026-08-22T21:30:59.8065874-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=8000  panel=64  GPU=1738.51 ms  GPU_wall=1738.55 ms  GFLOP/s=196.336  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V1 launch_position=13 start=2026-08-22T21:31:05.6919908-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=8000  block=512  CPU=-1 ms  GPU=194797 ms  GFLOP/s=1.75225  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=8000 variant=V2 launch_position=14 start=2026-08-22T21:34:23.3467283-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=8000  block=512  CPU=-1 ms  GPU=194922 ms  pivot%=0.158917  row_swap%=0.0997353  factor%=0.115468  update%=99.228  back_sub%=0.397921  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V3 launch_position=0 start=2026-08-22T21:37:43.6098900-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=16000  block=512  CPU=-1 ms  GPU=125488 ms  pivot%=0.521393  row_swap%=0.275117  factor%=0.417522  update%=96.2962  back_sub%=2.48978  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V3f launch_position=1 start=2026-08-22T21:40:06.5047737-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=16000  block=512  CPU=-1 ms  GPU=123979 ms  GFLOP/s=22.0252  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V4 launch_position=2 start=2026-08-22T21:42:26.7512551-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=16000  block=512  CPU=-1 ms  GPU=2056.94 ms  GFLOP/s=1327.54  residual_l2=1.12703e-08  solution_error_l2=1.43695e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V5a launch_position=3 start=2026-08-22T21:42:47.7893952-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=16000  block=512  tile=32x32  CPU=-1 ms  GPU=160893 ms  pivot%=0.434275  row_swap%=0.24479  factor%=0.350046  update%=97.0275  back_sub%=1.94339  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V5af launch_position=4 start=2026-08-22T21:45:40.7487915-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=16000  block=512  CPU=-1 ms  GPU=159233 ms  GFLOP/s=17.1488  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V5bf launch_position=5 start=2026-08-22T21:48:36.1701303-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=16000  block=512  CPU=-1 ms  GPU=215434 ms  GFLOP/s=12.6752  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=VLU launch_position=6 start=2026-08-22T21:52:27.0391437-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=16000  block=512  CPU=-1 ms  GPU=127118 ms  GFLOP/s=21.4813  residual_l2=3.66895e-09  solution_error_l2=4.6783e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V6a launch_position=7 start=2026-08-22T21:54:49.8811487-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=16000  panel=64  GPU=3161.71 ms  GPU_wall=3161.72 ms  GFLOP/s=863.667  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V6b launch_position=8 start=2026-08-22T21:55:10.2409574-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=16000  panel=64  GPU=3109.11 ms  GPU_wall=3109.12 ms  GFLOP/s=878.28  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V6c launch_position=9 start=2026-08-22T21:55:26.2470854-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=16000  panel=64  GPU=2946.86 ms  GPU_wall=2946.9 ms  GFLOP/s=926.635  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V6d launch_position=10 start=2026-08-22T21:55:43.2648252-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=16000  panel=64  GPU=2983.18 ms  GPU_wall=2983.18 ms  GFLOP/s=915.355  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V6e launch_position=11 start=2026-08-22T21:56:00.3889156-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=16000  panel=64  GPU=7350.38 ms  GPU_wall=7350.46 ms  GFLOP/s=371.5  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V5c launch_position=12 start=2026-08-22T21:56:22.0207649-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=16000  panel=64  GPU=12344.2 ms  GPU_wall=12344.2 ms  GFLOP/s=221.211  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V1 launch_position=13 start=2026-08-22T21:56:48.3534770-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=16000  block=512  CPU=-1 ms  GPU=2.57099e+06 ms  GFLOP/s=1.06211  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=2 n=16000 variant=V2 launch_position=14 start=2026-08-22T22:39:51.3999695-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=16000  block=512  CPU=-1 ms  GPU=2.56945e+06 ms  pivot%=0.0339081  row_swap%=0.0173135  factor%=0.0226767  update%=99.8045  back_sub%=0.121595  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V3f launch_position=0 start=2026-08-22T23:22:58.7713904-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=2000  block=512  CPU=-1 ms  GPU=346.138 ms  GFLOP/s=15.4081  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V4 launch_position=1 start=2026-08-22T23:23:00.0753953-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=2000  block=512  CPU=-1 ms  GPU=39.6184 ms  GFLOP/s=134.618  residual_l2=1.25573e-08  solution_error_l2=5.7416e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V5a launch_position=2 start=2026-08-22T23:23:01.0457142-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=2000  block=512  tile=32x32  CPU=-1 ms  GPU=605.729 ms  pivot%=8.80563  row_swap%=7.87856  factor%=10.5736  update%=64.8848  back_sub%=7.85733  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V5af launch_position=3 start=2026-08-22T23:23:02.6773615-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=2000  block=512  CPU=-1 ms  GPU=373.343 ms  GFLOP/s=14.2853  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V5bf launch_position=4 start=2026-08-22T23:23:03.9573507-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=2000  block=512  CPU=-1 ms  GPU=477.741 ms  GFLOP/s=11.1637  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=VLU launch_position=5 start=2026-08-22T23:23:05.1873856-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=2000  block=512  CPU=-1 ms  GPU=391.758 ms  GFLOP/s=13.6139  residual_l2=1.31434e-08  solution_error_l2=5.99648e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V6a launch_position=6 start=2026-08-22T23:23:06.2273245-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=2000  panel=64  GPU=195.168 ms  GPU_wall=195.184 ms  GFLOP/s=27.3269  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V6b launch_position=7 start=2026-08-22T23:23:07.1971926-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=2000  panel=64  GPU=141.723 ms  GPU_wall=141.814 ms  GFLOP/s=37.6322  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V6c launch_position=8 start=2026-08-22T23:23:08.1385362-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=2000  panel=64  GPU=236.832 ms  GPU_wall=236.829 ms  GFLOP/s=22.5195  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V6d launch_position=9 start=2026-08-22T23:23:09.5591985-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=2000  panel=32  GPU=112.171 ms  GPU_wall=112.174 ms  GFLOP/s=47.5465  residual_l2=1.20803e-08  solution_error_l2=5.52197e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V6e launch_position=10 start=2026-08-22T23:23:10.5122830-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=2000  panel=64  GPU=104.162 ms  GPU_wall=104.166 ms  GFLOP/s=51.2023  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V5c launch_position=11 start=2026-08-22T23:23:11.4561257-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=2000  panel=64  GPU=128.086 ms  GPU_wall=128.09 ms  GFLOP/s=41.6386  residual_l2=1.19906e-08  solution_error_l2=5.48212e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V1 launch_position=12 start=2026-08-22T23:23:12.4280801-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=2000  block=512  CPU=-1 ms  GPU=2270.81 ms  GFLOP/s=2.34865  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V2 launch_position=13 start=2026-08-22T23:23:15.3559249-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=2000  block=512  CPU=-1 ms  GPU=2402.88 ms  pivot%=1.71919  row_swap%=1.76456  factor%=1.73594  update%=92.8015  back_sub%=1.97879  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=2000 variant=V3 launch_position=14 start=2026-08-22T23:23:18.6555255-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=2000  block=512  CPU=-1 ms  GPU=491.434 ms  pivot%=8.20567  row_swap%=7.9613  factor%=8.73933  update%=65.3949  back_sub%=9.69882  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V3f launch_position=0 start=2026-08-22T23:23:19.8603582-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=4000  block=512  CPU=-1 ms  GPU=2180.22 ms  GFLOP/s=19.5699  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V4 launch_position=1 start=2026-08-22T23:23:23.2902545-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=4000  block=512  CPU=-1 ms  GPU=60.6556 ms  GFLOP/s=703.425  residual_l2=1.18328e-08  solution_error_l2=7.60311e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V5a launch_position=2 start=2026-08-22T23:23:24.7202621-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=4000  block=512  tile=32x32  CPU=-1 ms  GPU=2738 ms  pivot%=2.73717  row_swap%=2.38309  factor%=2.70832  update%=85.1407  back_sub%=7.03074  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V5af launch_position=3 start=2026-08-22T23:23:28.8244372-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=4000  block=512  CPU=-1 ms  GPU=2423.19 ms  GFLOP/s=17.6076  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V5bf launch_position=4 start=2026-08-22T23:23:32.4848546-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=4000  block=512  CPU=-1 ms  GPU=3296.59 ms  GFLOP/s=12.9427  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=VLU launch_position=5 start=2026-08-22T23:23:36.8335303-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=4000  block=512  CPU=-1 ms  GPU=2378.47 ms  GFLOP/s=17.9387  residual_l2=1.2128e-08  solution_error_l2=7.79758e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V6a launch_position=6 start=2026-08-22T23:23:40.4398244-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=4000  panel=64  GPU=317.333 ms  GPU_wall=317.337 ms  GFLOP/s=134.454  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V6b launch_position=7 start=2026-08-22T23:23:42.0878057-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=4000  panel=64  GPU=223.863 ms  GPU_wall=223.865 ms  GFLOP/s=190.593  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V6c launch_position=8 start=2026-08-22T23:23:43.5493804-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=4000  panel=64  GPU=191.88 ms  GPU_wall=191.884 ms  GFLOP/s=222.361  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V6d launch_position=9 start=2026-08-22T23:23:44.9917467-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=4000  panel=32  GPU=222.265 ms  GPU_wall=222.271 ms  GFLOP/s=191.963  residual_l2=1.19693e-08  solution_error_l2=7.6928e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V6e launch_position=10 start=2026-08-22T23:23:46.4056338-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=4000  panel=64  GPU=317.104 ms  GPU_wall=317.109 ms  GFLOP/s=134.551  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V5c launch_position=11 start=2026-08-22T23:23:48.0712677-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=4000  panel=64  GPU=298.898 ms  GPU_wall=298.925 ms  GFLOP/s=142.747  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V1 launch_position=12 start=2026-08-22T23:23:49.7426659-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=4000  block=512  CPU=-1 ms  GPU=14370.1 ms  GFLOP/s=2.96913  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V2 launch_position=13 start=2026-08-22T23:24:05.2580976-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=4000  block=512  CPU=-1 ms  GPU=14521.8 ms  pivot%=0.58041  row_swap%=0.413076  factor%=0.454667  update%=97.2262  back_sub%=1.32567  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=4000 variant=V3 launch_position=14 start=2026-08-22T23:24:20.9923991-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=4000  block=512  CPU=-1 ms  GPU=2471.47 ms  pivot%=3.10245  row_swap%=2.59577  factor%=2.91168  update%=83.5991  back_sub%=7.79095  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V3f launch_position=0 start=2026-08-22T23:24:24.7877546-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=8000  block=512  CPU=-1 ms  GPU=15780.9 ms  GFLOP/s=21.6295  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V4 launch_position=1 start=2026-08-22T23:24:43.8787383-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=8000  block=512  CPU=-1 ms  GPU=325.669 ms  GFLOP/s=1048.1  residual_l2=1.13568e-08  solution_error_l2=1.02736e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V5a launch_position=2 start=2026-08-22T23:24:48.5185449-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=8000  block=512  tile=32x32  CPU=-1 ms  GPU=18963.5 ms  pivot%=1.36375  row_swap%=0.969791  factor%=1.11092  update%=92.482  back_sub%=4.0735  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V5af launch_position=3 start=2026-08-22T23:25:12.2095122-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=8000  block=512  CPU=-1 ms  GPU=18220 ms  GFLOP/s=18.734  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V5bf launch_position=4 start=2026-08-22T23:25:35.1209270-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=8000  block=512  CPU=-1 ms  GPU=26687.8 ms  GFLOP/s=12.7899  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=VLU launch_position=5 start=2026-08-22T23:26:07.7279843-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=8000  block=512  CPU=-1 ms  GPU=16558.2 ms  GFLOP/s=20.6141  residual_l2=1.05104e-08  solution_error_l2=9.51103e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V6a launch_position=6 start=2026-08-22T23:26:28.6075301-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=8000  panel=64  GPU=867.285 ms  GPU_wall=867.289 ms  GFLOP/s=393.565  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V6b launch_position=7 start=2026-08-22T23:26:34.6526382-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=8000  panel=64  GPU=756.241 ms  GPU_wall=756.242 ms  GFLOP/s=451.355  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V6c launch_position=8 start=2026-08-22T23:26:40.0313886-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=8000  panel=64  GPU=627.749 ms  GPU_wall=627.753 ms  GFLOP/s=543.742  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V6d launch_position=9 start=2026-08-22T23:26:45.4556787-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=8000  panel=64  GPU=609.73 ms  GPU_wall=609.732 ms  GFLOP/s=559.81  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V6e launch_position=10 start=2026-08-22T23:26:50.3081924-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=8000  panel=64  GPU=1341.58 ms  GPU_wall=1341.58 ms  GFLOP/s=254.427  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V5c launch_position=11 start=2026-08-22T23:26:55.9445415-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=8000  panel=64  GPU=1754.57 ms  GPU_wall=1754.57 ms  GFLOP/s=194.54  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V1 launch_position=12 start=2026-08-22T23:27:01.5990366-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=8000  block=512  CPU=-1 ms  GPU=194642 ms  GFLOP/s=1.75365  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V2 launch_position=13 start=2026-08-22T23:30:19.1965240-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=8000  block=512  CPU=-1 ms  GPU=194749 ms  pivot%=0.152588  row_swap%=0.0979772  factor%=0.111233  update%=99.2418  back_sub%=0.396384  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=8000 variant=V3 launch_position=14 start=2026-08-22T23:33:39.2766213-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=8000  block=512  CPU=-1 ms  GPU=16647.3 ms  pivot%=1.47376  row_swap%=1.12071  factor%=1.24904  update%=91.517  back_sub%=4.63952  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V3f launch_position=0 start=2026-08-22T23:34:01.1151494-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=16000  block=512  CPU=-1 ms  GPU=123962 ms  GFLOP/s=22.0283  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V4 launch_position=1 start=2026-08-22T23:36:20.9660006-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=16000  block=512  CPU=-1 ms  GPU=2068.3 ms  GFLOP/s=1320.25  residual_l2=1.12703e-08  solution_error_l2=1.43695e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V5a launch_position=2 start=2026-08-22T23:36:41.9043096-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=16000  block=512  tile=32x32  CPU=-1 ms  GPU=160911 ms  pivot%=0.41855  row_swap%=0.229525  factor%=0.332239  update%=97.0864  back_sub%=1.93327  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V5af launch_position=3 start=2026-08-22T23:39:34.2750258-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=16000  block=512  CPU=-1 ms  GPU=159114 ms  GFLOP/s=17.1617  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V5bf launch_position=4 start=2026-08-22T23:42:29.1043770-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=16000  block=512  CPU=-1 ms  GPU=215548 ms  GFLOP/s=12.6685  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=VLU launch_position=5 start=2026-08-22T23:46:20.0489270-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=16000  block=512  CPU=-1 ms  GPU=127088 ms  GFLOP/s=21.4865  residual_l2=3.66895e-09  solution_error_l2=4.6783e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V6a launch_position=6 start=2026-08-22T23:48:42.5344569-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=16000  panel=64  GPU=3081.29 ms  GPU_wall=3081.29 ms  GFLOP/s=886.21  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V6b launch_position=7 start=2026-08-22T23:49:02.5341385-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=16000  panel=64  GPU=3063.99 ms  GPU_wall=3064.01 ms  GFLOP/s=891.212  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V6c launch_position=8 start=2026-08-22T23:49:17.8195617-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=16000  panel=64  GPU=2962.48 ms  GPU_wall=2962.48 ms  GFLOP/s=921.751  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V6d launch_position=9 start=2026-08-22T23:49:34.0018231-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=16000  panel=64  GPU=2965.49 ms  GPU_wall=2965.49 ms  GFLOP/s=920.816  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V6e launch_position=10 start=2026-08-22T23:49:51.0840942-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=16000  panel=64  GPU=7349.3 ms  GPU_wall=7349.3 ms  GFLOP/s=371.555  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V5c launch_position=11 start=2026-08-22T23:50:12.6505226-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=16000  panel=64  GPU=12298.8 ms  GPU_wall=12298.8 ms  GFLOP/s=222.027  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V1 launch_position=12 start=2026-08-22T23:50:39.2552429-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=16000  block=512  CPU=-1 ms  GPU=2.72094e+06 ms  GFLOP/s=1.00357  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V2 launch_position=13 start=2026-08-23T00:36:12.5028520-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=16000  block=512  CPU=-1 ms  GPU=2.56922e+06 ms  pivot%=0.0345301  row_swap%=0.0174977  factor%=0.022678  update%=99.8042  back_sub%=0.121092  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=3 n=16000 variant=V3 launch_position=14 start=2026-08-23T01:19:20.9828741-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=16000  block=512  CPU=-1 ms  GPU=125454 ms  pivot%=0.525551  row_swap%=0.284043  factor%=0.423399  update%=96.2874  back_sub%=2.47962  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V4 launch_position=0 start=2026-08-23T01:21:44.3408033-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=2000  block=512  CPU=-1 ms  GPU=41.5812 ms  GFLOP/s=128.263  residual_l2=1.25573e-08  solution_error_l2=5.7416e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V5a launch_position=1 start=2026-08-23T01:21:45.3127122-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=2000  block=512  tile=32x32  CPU=-1 ms  GPU=609.294 ms  pivot%=10.1245  row_swap%=9.10484  factor%=9.75604  update%=63.2115  back_sub%=7.80312  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V5af launch_position=2 start=2026-08-23T01:21:46.9628731-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=2000  block=512  CPU=-1 ms  GPU=367.897 ms  GFLOP/s=14.4968  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V5bf launch_position=3 start=2026-08-23T01:21:48.2841902-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=2000  block=512  CPU=-1 ms  GPU=486.026 ms  GFLOP/s=10.9733  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=VLU launch_position=4 start=2026-08-23T01:21:49.5794194-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=2000  block=512  CPU=-1 ms  GPU=383.148 ms  GFLOP/s=13.9198  residual_l2=1.31434e-08  solution_error_l2=5.99648e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V6a launch_position=5 start=2026-08-23T01:21:50.8619434-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=2000  panel=64  GPU=357.932 ms  GPU_wall=357.862 ms  GFLOP/s=14.9004  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V6b launch_position=6 start=2026-08-23T01:21:52.1347403-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=2000  panel=64  GPU=174.518 ms  GPU_wall=174.521 ms  GFLOP/s=30.5603  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V6c launch_position=7 start=2026-08-23T01:21:53.1151529-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=2000  panel=64  GPU=129.343 ms  GPU_wall=129.347 ms  GFLOP/s=41.234  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V6d launch_position=8 start=2026-08-23T01:21:54.0907612-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=2000  panel=32  GPU=128.572 ms  GPU_wall=128.576 ms  GFLOP/s=41.4812  residual_l2=1.20803e-08  solution_error_l2=5.52197e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V6e launch_position=9 start=2026-08-23T01:21:55.1026331-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=2000  panel=64  GPU=103.594 ms  GPU_wall=103.6 ms  GFLOP/s=51.4831  residual_l2=1.19904e-08  solution_error_l2=5.48204e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V5c launch_position=10 start=2026-08-23T01:21:56.0167464-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=2000  panel=64  GPU=123.23 ms  GPU_wall=123.24 ms  GFLOP/s=43.2795  residual_l2=1.19906e-08  solution_error_l2=5.48212e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V1 launch_position=11 start=2026-08-23T01:21:56.9650405-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=2000  block=512  CPU=-1 ms  GPU=2256.14 ms  GFLOP/s=2.36392  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V2 launch_position=12 start=2026-08-23T01:21:59.8879832-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=2000  block=512  CPU=-1 ms  GPU=2402.86 ms  pivot%=1.87681  row_swap%=1.7325  factor%=1.90308  update%=92.5095  back_sub%=1.97813  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V3 launch_position=13 start=2026-08-23T01:22:03.1424754-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=2000  block=512  CPU=-1 ms  GPU=495.638 ms  pivot%=8.91896  row_swap%=9.39224  factor%=10.3925  update%=61.6718  back_sub%=9.62444  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=2000 variant=V3f launch_position=14 start=2026-08-23T01:22:04.3711966-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=2000  block=512  CPU=-1 ms  GPU=416.702 ms  GFLOP/s=12.7989  residual_l2=2.03483e-08  solution_error_l2=9.30284e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V4 launch_position=0 start=2026-08-23T01:22:05.5633055-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=4000  block=512  CPU=-1 ms  GPU=60.0505 ms  GFLOP/s=710.514  residual_l2=1.18328e-08  solution_error_l2=7.60311e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V5a launch_position=1 start=2026-08-23T01:22:07.0570087-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=4000  block=512  tile=32x32  CPU=-1 ms  GPU=2803.53 ms  pivot%=3.06259  row_swap%=2.95967  factor%=3.11485  update%=83.9987  back_sub%=6.86414  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V5af launch_position=2 start=2026-08-23T01:22:11.4292457-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=4000  block=512  CPU=-1 ms  GPU=2427.86 ms  GFLOP/s=17.5738  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V5bf launch_position=3 start=2026-08-23T01:22:15.2031770-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=4000  block=512  CPU=-1 ms  GPU=3301.68 ms  GFLOP/s=12.9227  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=VLU launch_position=4 start=2026-08-23T01:22:20.0618864-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=4000  block=512  CPU=-1 ms  GPU=2376.62 ms  GFLOP/s=17.9527  residual_l2=1.2128e-08  solution_error_l2=7.79758e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V6a launch_position=5 start=2026-08-23T01:22:23.7397401-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=4000  panel=64  GPU=313.387 ms  GPU_wall=313.389 ms  GFLOP/s=136.147  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V6b launch_position=6 start=2026-08-23T01:22:25.4957767-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=4000  panel=64  GPU=229.467 ms  GPU_wall=229.47 ms  GFLOP/s=185.938  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V6c launch_position=7 start=2026-08-23T01:22:26.9863036-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=4000  panel=64  GPU=196.312 ms  GPU_wall=196.315 ms  GFLOP/s=217.341  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V6d launch_position=8 start=2026-08-23T01:22:28.4305937-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b32  n=4000  panel=32  GPU=207.148 ms  GPU_wall=207.126 ms  GFLOP/s=205.972  residual_l2=1.19693e-08  solution_error_l2=7.6928e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V6e launch_position=9 start=2026-08-23T01:22:29.8828055-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=4000  panel=64  GPU=232.007 ms  GPU_wall=232.011 ms  GFLOP/s=183.902  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V5c launch_position=10 start=2026-08-23T01:22:31.3428568-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=4000  panel=64  GPU=295.924 ms  GPU_wall=295.944 ms  GFLOP/s=144.181  residual_l2=1.1844e-08  solution_error_l2=7.61073e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V1 launch_position=11 start=2026-08-23T01:22:32.8385012-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=4000  block=512  CPU=-1 ms  GPU=14369.8 ms  GFLOP/s=2.96918  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V2 launch_position=12 start=2026-08-23T01:22:48.2513772-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=4000  block=512  CPU=-1 ms  GPU=14530 ms  pivot%=0.562943  row_swap%=0.42392  factor%=0.469342  update%=97.2188  back_sub%=1.32502  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V3 launch_position=13 start=2026-08-23T01:23:04.2415767-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=4000  block=512  CPU=-1 ms  GPU=2504.41 ms  pivot%=3.07996  row_swap%=2.72288  factor%=3.06445  update%=83.449  back_sub%=7.68372  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=4000 variant=V3f launch_position=14 start=2026-08-23T01:23:08.1218922-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=4000  block=512  CPU=-1 ms  GPU=2183.61 ms  GFLOP/s=19.5395  residual_l2=2.01869e-08  solution_error_l2=1.29761e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V4 launch_position=0 start=2026-08-23T01:23:11.8260318-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=8000  block=512  CPU=-1 ms  GPU=325.179 ms  GFLOP/s=1049.68  residual_l2=1.13568e-08  solution_error_l2=1.02736e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V5a launch_position=1 start=2026-08-23T01:23:17.1015997-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=8000  block=512  tile=32x32  CPU=-1 ms  GPU=18733.1 ms  pivot%=1.03736  row_swap%=0.711917  factor%=0.888543  update%=93.2398  back_sub%=4.12234  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V5af launch_position=2 start=2026-08-23T01:23:40.2257002-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=8000  block=512  CPU=-1 ms  GPU=18165.7 ms  GFLOP/s=18.79  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V5bf launch_position=3 start=2026-08-23T01:24:02.1842632-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=8000  block=512  CPU=-1 ms  GPU=26681.3 ms  GFLOP/s=12.793  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=VLU launch_position=4 start=2026-08-23T01:24:33.3082934-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=8000  block=512  CPU=-1 ms  GPU=16624.2 ms  GFLOP/s=20.5323  residual_l2=1.05104e-08  solution_error_l2=9.51103e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V6a launch_position=5 start=2026-08-23T01:24:54.8481477-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=8000  panel=64  GPU=1075.47 ms  GPU_wall=1075.48 ms  GFLOP/s=317.38  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V6b launch_position=6 start=2026-08-23T01:25:03.4673189-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=8000  panel=64  GPU=848.546 ms  GPU_wall=848.547 ms  GFLOP/s=402.257  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V6c launch_position=7 start=2026-08-23T01:25:10.4071362-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=8000  panel=64  GPU=848.924 ms  GPU_wall=848.93 ms  GFLOP/s=402.078  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V6d launch_position=8 start=2026-08-23T01:25:16.9279483-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=8000  panel=64  GPU=597.365 ms  GPU_wall=597.36 ms  GFLOP/s=571.399  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V6e launch_position=9 start=2026-08-23T01:25:24.5928431-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=8000  panel=64  GPU=1346.39 ms  GPU_wall=1346.4 ms  GFLOP/s=253.517  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V5c launch_position=10 start=2026-08-23T01:25:30.2961806-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=8000  panel=64  GPU=1810.47 ms  GPU_wall=1810.47 ms  GFLOP/s=188.534  residual_l2=1.14333e-08  solution_error_l2=1.03433e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V1 launch_position=11 start=2026-08-23T01:25:36.7667130-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=8000  block=512  CPU=-1 ms  GPU=194791 ms  GFLOP/s=1.75231  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V2 launch_position=12 start=2026-08-23T01:28:55.2463285-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=8000  block=512  CPU=-1 ms  GPU=194804 ms  pivot%=0.155491  row_swap%=0.101566  factor%=0.116621  update%=99.23  back_sub%=0.396307  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V3 launch_position=13 start=2026-08-23T01:32:15.5923699-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=8000  block=512  CPU=-1 ms  GPU=16714.7 ms  pivot%=1.42844  row_swap%=1.10678  factor%=1.30008  update%=91.546  back_sub%=4.61872  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=8000 variant=V3f launch_position=14 start=2026-08-23T01:32:37.6895087-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=8000  block=512  CPU=-1 ms  GPU=15800.4 ms  GFLOP/s=21.6028  residual_l2=1.89383e-08  solution_error_l2=1.71332e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V4 launch_position=0 start=2026-08-23T01:32:58.1959009-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=16000  block=512  CPU=-1 ms  GPU=2054.98 ms  GFLOP/s=1328.8  residual_l2=1.12703e-08  solution_error_l2=1.43695e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V5a launch_position=1 start=2026-08-23T01:33:20.0761308-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5a
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5a_t32x32  n=16000  block=512  tile=32x32  CPU=-1 ms  GPU=160979 ms  pivot%=0.421043  row_swap%=0.232898  factor%=0.341911  update%=97.063  back_sub%=1.94115  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V5af launch_position=2 start=2026-08-23T01:36:12.6791784-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5af
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5af_t32x32  n=16000  block=512  CPU=-1 ms  GPU=159122 ms  GFLOP/s=17.1609  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V5bf launch_position=3 start=2026-08-23T01:39:08.3061252-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5bf
+  tile=32x32
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5bf_t32x32  n=16000  block=512  CPU=-1 ms  GPU=215256 ms  GFLOP/s=12.6857  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=VLU launch_position=4 start=2026-08-23T01:43:00.8073338-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=VLU
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=VLU  n=16000  block=512  CPU=-1 ms  GPU=127069 ms  GFLOP/s=21.4897  residual_l2=3.66895e-09  solution_error_l2=4.6783e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V6a launch_position=5 start=2026-08-23T01:45:24.7281607-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6a
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6a_b64  n=16000  panel=64  GPU=3132.66 ms  GPU_wall=3132.69 ms  GFLOP/s=871.676  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V6b launch_position=6 start=2026-08-23T01:45:45.8132944-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6b
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6b_b64  n=16000  panel=64  GPU=3052.16 ms  GPU_wall=3052.17 ms  GFLOP/s=894.666  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V6c launch_position=7 start=2026-08-23T01:46:01.3696385-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6c_b64  n=16000  panel=64  GPU=2948.97 ms  GPU_wall=2949.01 ms  GFLOP/s=925.973  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V6d launch_position=8 start=2026-08-23T01:46:18.3744601-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6d
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6d_b64  n=16000  panel=64  GPU=2964.93 ms  GPU_wall=2964.93 ms  GFLOP/s=920.989  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V6e launch_position=9 start=2026-08-23T01:46:35.5819792-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V6e
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V6e_b64  n=16000  panel=64  GPU=7352.21 ms  GPU_wall=7352.23 ms  GFLOP/s=371.408  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V5c launch_position=10 start=2026-08-23T01:46:57.0370280-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V5c
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V5c_b64  n=16000  panel=64  GPU=12328.1 ms  GPU_wall=12328.1 ms  GFLOP/s=221.499  residual_l2=1.13852e-08  solution_error_l2=1.45159e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V1 launch_position=11 start=2026-08-23T01:47:23.5673870-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V1
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V1  n=16000  block=512  CPU=-1 ms  GPU=2.57094e+06 ms  GFLOP/s=1.06213  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V2 launch_position=12 start=2026-08-23T02:30:26.6328367-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V2
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V2  n=16000  block=512  CPU=-1 ms  GPU=2.56909e+06 ms  pivot%=0.0336303  row_swap%=0.0165681  factor%=0.0215979  update%=99.8071  back_sub%=0.121088  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V3 launch_position=13 start=2026-08-23T03:13:34.9020820-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3  n=16000  block=512  CPU=-1 ms  GPU=125535 ms  pivot%=0.534195  row_swap%=0.284705  factor%=0.421058  update%=96.2803  back_sub%=2.4797  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+CASE stage=timed repeat=4 n=16000 variant=V3f launch_position=14 start=2026-08-23T03:15:59.0459617-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_all_variants_energy_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=16000  block=512  CPU=-1 ms  GPU=123932 ms  GFLOP/s=22.0335  residual_l2=1.62613e-08  solution_error_l2=2.07306e-06  cpu_gpu_l2=-1
+PAIRED_SWEEP done=2026-08-23T03:18:20.7350515-04:00

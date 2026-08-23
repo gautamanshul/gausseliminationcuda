@@ -7,6 +7,8 @@ param(
     [int]$DiscardRepeats = 1,
     [int]$Block = 512,
     [int]$PanelWidth = 64,
+    [int]$TileRows = 32,
+    [int]$TileCols = 32,
     [int]$BaseSeed = 42,
     [int]$CpuReferenceMaxN = 0,
     [int]$GpuIndex = 0,
@@ -36,8 +38,9 @@ if ($TotalRepeats -le 0 -or $DiscardRepeats -lt 0 -or
     $DiscardRepeats -ge $TotalRepeats) {
     throw "Require TotalRepeats > 0 and 0 <= DiscardRepeats < TotalRepeats."
 }
-if ($Block -le 0 -or $PanelWidth -le 0 -or $TelemetrySampleMs -le 0) {
-    throw "Block, PanelWidth, and TelemetrySampleMs must be positive."
+if ($Block -le 0 -or $PanelWidth -le 0 -or $TileRows -le 0 -or
+    $TileCols -le 0 -or $TelemetrySampleMs -le 0) {
+    throw "Block, PanelWidth, tile dimensions, and TelemetrySampleMs must be positive."
 }
 if ($CpuReferenceMaxN -lt 0) {
     throw "CpuReferenceMaxN must be non-negative."
@@ -176,6 +179,8 @@ function Invoke-M7Case {
         "--seed", [string]$ProtocolSeed,
         "--block", [string]$Block,
         "--panel-width", [string]$PanelWidth,
+        "--tile-rows", [string]$TileRows,
+        "--tile-cols", [string]$TileCols,
         "--m7-cpu-reference-max-n", [string]$CpuReferenceMaxN,
         "--out", $RawCsv
     )
@@ -267,6 +272,7 @@ function Write-RunMetadata {
     "total_repeats=$TotalRepeats" | Add-Content -LiteralPath $RunLog
     "discard_repeats=$DiscardRepeats" | Add-Content -LiteralPath $RunLog
     "base_seed=$BaseSeed" | Add-Content -LiteralPath $RunLog
+    "tile=${TileRows}x${TileCols}" | Add-Content -LiteralPath $RunLog
     "cpu_reference_max_n=$CpuReferenceMaxN" | Add-Content -LiteralPath $RunLog
     & nvidia-smi -i $GpuIndex | Add-Content -LiteralPath $RunLog
     & cmake --version | Add-Content -LiteralPath $RunLog
@@ -332,13 +338,13 @@ function Write-Summary {
     $Cuda = (& nvcc --version | Select-Object -Last 1) -join ""
     $Failed = @($Manifest | Where-Object { $_.status -ne "ok" })
     $Lines = New-Object System.Collections.Generic.List[string]
-    $Lines.Add("# M7 V6-family kappa sweep summary")
+    $Lines.Add("# M7 conditioned-system kappa sweep summary")
     $Lines.Add("")
     $Lines.Add("**Generated:** $(Get-Date -Format o)")
     $Lines.Add("**Commit:** ``$Commit``")
     $Lines.Add("**GPU:** $Gpu")
     $Lines.Add("**CUDA:** $Cuda")
-    $Lines.Add("**Protocol:** $TotalRepeats paired/interleaved repeats; first $DiscardRepeats discarded; panel width $PanelWidth; CPU reference gate $CpuReferenceMaxN (known M7 solution used for correctness).")
+    $Lines.Add("**Protocol:** $TotalRepeats paired/interleaved repeats; first $DiscardRepeats discarded; panel width $PanelWidth; tile ${TileRows}x${TileCols}; CPU reference gate $CpuReferenceMaxN (known M7 solution used for correctness).")
     $Lines.Add("")
     $Lines.Add("The raw benchmark CSV is preserved exactly as emitted by the executable. The companion manifest records outer repeat, warm-up/record status, rotating launch position, and raw-row index.")
     $Lines.Add("")

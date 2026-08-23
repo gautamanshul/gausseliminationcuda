@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="640.0" y="36" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700">Effective throughput as problem size grows</text>
+<line x1="105" y1="672.00" x2="930" y2="672.00" stroke="#dbe3ee"/>
+<text x="93" y="677.00" text-anchor="end" font-family="Arial" font-size="13">10^-3</text>
+<line x1="105" y1="375.00" x2="930" y2="375.00" stroke="#dbe3ee"/>
+<text x="93" y="380.00" text-anchor="end" font-family="Arial" font-size="13">10^-2</text>
+<line x1="105" y1="78.00" x2="930" y2="78.00" stroke="#dbe3ee"/>
+<text x="93" y="83.00" text-anchor="end" font-family="Arial" font-size="13">10^-1</text>
+<line x1="517.50" y1="78" x2="517.50" y2="672" stroke="#edf1f7"/>
+<text x="517.50" y="699" text-anchor="middle" font-family="Arial" font-size="14">64</text>
+<line x1="105" y1="78" x2="105" y2="672" stroke="#1f2937" stroke-width="2"/>
+<line x1="105" y1="672" x2="930" y2="672" stroke="#1f2937" stroke-width="2"/>
+<text x="517.5" y="735" text-anchor="middle" font-family="Arial" font-size="16">Matrix dimension n (log2 scale)</text>
+<text x="28" y="375.0" text-anchor="middle" transform="rotate(-90 28 375.0)" font-family="Arial" font-size="16">Effective LU-equivalent throughput (GFLOP/s, log scale)</text>
+<polyline fill="none" stroke="#2563eb" stroke-width="2.5" points="517.50,316.66"/>
+<circle cx="517.50" cy="316.66" r="4" fill="#2563eb"/>
+<line x1="958" y1="90" x2="983" y2="90" stroke="#2563eb" stroke-width="3"/>
+<circle cx="970.5" cy="90" r="3.5" fill="#2563eb"/>
+<text x="992" y="95" font-family="Arial" font-size="14">V3f</text>
+<polyline fill="none" stroke="#dc2626" stroke-width="2.5" points="517.50,385.50"/>
+<circle cx="517.50" cy="385.50" r="4" fill="#dc2626"/>
+<line x1="958" y1="120" x2="983" y2="120" stroke="#dc2626" stroke-width="3"/>
+<circle cx="970.5" cy="120" r="3.5" fill="#dc2626"/>
+<text x="992" y="125" font-family="Arial" font-size="14">V4</text>
+</svg>

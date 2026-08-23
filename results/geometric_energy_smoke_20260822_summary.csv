@@ -1,0 +1,3 @@
+"variant","n","repeats","median_gpu_ms","q1_gpu_ms","q3_gpu_ms","iqr_gpu_ms","min_gpu_ms","max_gpu_ms","max_residual_norm2","max_solution_error_norm2","median_energy_j","median_avg_power_w","median_process_wall_ms","median_joules_per_effective_gflop"
+"V3f","64","1","4.54371","4.54371","4.54371","0","4.54371","4.54371","2.2385E-08","2.05876E-07","5.435497","11.619606","467.7867","31102.163537979"
+"V4","64","1","14.0883","14.0883","14.0883","0","14.0883","14.0883","2.65414E-08","2.43677E-07","6.468764","12.043397","537.1212","37014.565063477"

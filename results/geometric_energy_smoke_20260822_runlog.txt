@@ -1,0 +1,74 @@
+PAIRED_SWEEP start=2026-08-22T15:30:05.9248903-04:00
+repository=C:\Users\anshu\source\repos\gausselimcuda
+executable=C:\Users\anshu\source\repos\gausselimcuda\out\build\x64-Release\gauss_elim_bench.exe
+variants=V3f,V4
+sizes=64
+timed_repeats=1
+block=512
+panel_width=64
+tile=32x32
+gpu_index=0
+telemetry_sample_ms=100
+commit=e0545d53336fc591c01f8480407fd1d17331730b
+branch=feature/v0.3.0-ablation-harness
+Sat Aug 22 15:30:06 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 573.22                 Driver Version: 573.22         CUDA Version: 12.8     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                  Driver-Model | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GeForce GTX 1650      WDDM  |   00000000:01:00.0 Off |                  N/A |
+| N/A   61C    P8              6W /   35W |     504MiB /   4096MiB |      0%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A           31800    C+G   ...8bbwe\PhoneExperienceHost.exe      N/A      |
++-----------------------------------------------------------------------------------------+
+cmake version 3.26.3
+
+CMake suite maintained and supported by Kitware (kitware.com/cmake).
+nvcc: NVIDIA (R) Cuda compiler driver
+Copyright (c) 2005-2023 NVIDIA Corporation
+Built on Wed_Feb__8_05:53:42_Coordinated_Universal_Time_2023
+Cuda compilation tools, release 12.1, V12.1.66
+Build cuda_12.1.r12.1/compiler.32415258_0
+CASE stage=warmup repeat=-1 n=64 variant=V3f start=2026-08-22T15:30:06.4780948-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_energy_smoke_20260822_warmup.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=64  block=512  CPU=-1 ms  GPU=10.4117 ms  GFLOP/s=0.0167851  residual_l2=2.2385e-08  solution_error_l2=2.05876e-07  cpu_gpu_l2=-1
+CASE stage=warmup repeat=-1 n=64 variant=V4 start=2026-08-22T15:30:06.8366217-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_energy_smoke_20260822_warmup.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=64  block=512  CPU=-1 ms  GPU=13.3676 ms  GFLOP/s=0.0130736  residual_l2=2.65414e-08  solution_error_l2=2.43677e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=64 variant=V3f launch_position=0 start=2026-08-22T15:30:07.3055692-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_energy_smoke_20260822.csv
+  variant=V3f
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V3f  n=64  block=512  CPU=-1 ms  GPU=4.54371 ms  GFLOP/s=0.0384625  residual_l2=2.2385e-08  solution_error_l2=2.05876e-07  cpu_gpu_l2=-1
+CASE stage=timed repeat=0 n=64 variant=V4 launch_position=1 start=2026-08-22T15:30:07.8563411-04:00
+Running ablation harness
+  output=C:\Users\anshu\source\repos\gausselimcuda\results\geometric_energy_smoke_20260822.csv
+  variant=V4
+  tile=16x16
+  panel_width=64
+  cpu_reference_max_n=0
+  variant=V4  n=64  block=512  CPU=-1 ms  GPU=14.0883 ms  GFLOP/s=0.0124048  residual_l2=2.65414e-08  solution_error_l2=2.43677e-07  cpu_gpu_l2=-1
+PAIRED_SWEEP done=2026-08-22T15:30:08.6509175-04:00
